@@ -11,10 +11,9 @@ router.post("/upload", fileUploader.single("soundURL"), (req, res, next) => {
     return;
   }
 
-  res.json({ 
+  res.json({
     fileUrl: req.file.path,
-    duration: req.file.duration
-   });
+  });
 });
 
 router.get("/", (req, res, next) => {
@@ -25,11 +24,8 @@ router.get("/", (req, res, next) => {
 
 // POST '/sounds' => for saving a new sound in the database
 router.post("/", (req, res, next) => {
-  console.log('body: ', req.body);
-
   Sound.create(req.body)
     .then((createdSound) => {
-      // console.log('Created new sound: ', createdSound);
       res.status(200).json(createdSound);
     })
     .catch((err) => next(err));
