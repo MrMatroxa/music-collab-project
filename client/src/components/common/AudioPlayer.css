@@ -1,0 +1,75 @@
+.audio-player {
+    background-color: #f7f7f7;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .waveform-container {
+    margin-bottom: 10px;
+  }
+  
+  .audio-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .audio-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .track-title {
+    margin: 0;
+    font-weight: 600;
+  }
+  
+  .time-display {
+    font-family: monospace;
+    font-size: 14px;
+  }
+  
+  .control-buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .play-pause-btn, .stop-btn, .mute-btn {
+    background-color: #8a2be2;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
+  
+  .play-pause-btn:hover, .stop-btn:hover, .mute-btn:hover {
+    background-color: #7a1fd0;
+  }
+  
+  .volume-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .volume-slider {
+    width: 80px;
+  }
+  
+  @media (min-width: 768px) {
+    .audio-controls {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+  }
