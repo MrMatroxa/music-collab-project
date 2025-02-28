@@ -58,6 +58,7 @@ export default function SoundTagDetails() {
               soundId={sound._id}
               height={60}
               tags={sound.tags}
+              creator={sound.creator}
             />
           </div>
         ))

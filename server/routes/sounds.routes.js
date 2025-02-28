@@ -7,6 +7,8 @@ const { isAuthenticated } = require("../middleware/jwt.middleware.js");
 
 const fileUploader = require("../config/cloudinary.config");
 const Tag = require("../models/Tag.model.js");
+const User = require("../models/User.model.js");
+const Project = require("../models/Project.model.js");
 
 // Upload sound file to cloudinary
 router.post("/upload", fileUploader.single("soundURL"), (req, res, next) => {
@@ -172,8 +174,31 @@ router.delete("/:soundId", isAuthenticated, (req, res, next) => {
       }
 
       // Delete the sound
-      return cloudinary.v2.uploader.destroy(public_id, options)
-        .then(() => Sound.findByIdAndDelete(soundId));
+      return cloudinary.v2.uploader
+        .destroy(public_id, options)
+        .then(() => Sound.findByIdAndDelete(soundId))
+        .then(() => {
+          Tag.findOneAndUpdate([
+            { sound: soundId },
+            { $pull: { sound: soundId } },
+          ]);
+        })
+        .then(() => {
+          Project.findOneAndUpdate([
+            { soundId: soundId },
+            { $pull: { soundId: soundId } },
+          ]);
+        })
+        .then(() =>
+          User.find({ createdSounds: soundId, favoriteSounds: soundId })
+        )
+        .then(async (foundUsers) => {
+          for (const user of foundUsers) {
+            user.createdSounds.pull(soundId);
+            user.favoriteSounds.pull(soundId);
+            await user.save();
+          }
+        });
     })
     .then(() => {
       res.status(200).json({ message: "Sound deleted successfully" });
