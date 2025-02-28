@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5005/sounds",
+  baseURL: "http://localhost:5005/api/sounds",
   withCredentials: true
 });
 
@@ -15,17 +15,25 @@ const getSounds = () => {
     .catch(errorHandler);
 };
 
-const uploadSound = (file) => {
-  return api.post("/upload", file)
+const uploadSound = (file, token) => {
+  return api.post("/upload", file, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
     .then(res => res.data)
     .catch(errorHandler);
 };
 
-const createSound = (newSound) => {
-    return api.post("/", newSound)
-      .then(res => res.data)
-      .catch(errorHandler);
-  };
+const createSound = (newSound, token) => {
+  return api.post("/", newSound, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  .then(res => res.data)
+  .catch(errorHandler);
+};
 
 const deleteSound = (id) => {
   return api.delete(`/${id}`)
@@ -33,11 +41,18 @@ const deleteSound = (id) => {
     .catch(errorHandler);
 };
 
+const getSoundsByUser = (userId) => {
+  return api.get(`/user/${userId}`)
+    .then((res) => res.data)
+    .catch(errorHandler);
+};
+
 const fileUploadService = {
     getSounds,
     uploadSound,
     deleteSound,
-    createSound
+    createSound,
+    getSoundsByUser
 };
 
 export default fileUploadService;

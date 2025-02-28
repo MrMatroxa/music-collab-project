@@ -5,10 +5,10 @@ import service from "../../services/file-upload.service";
 function AddSound() {
   const [title, setTitle] = useState("");
   const [bpm, setBpm] = useState("");
-
   const [description, setDescription] = useState("");
   const [soundURL, setSoundURL] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [tags, setTags] = useState("");
   const [formData, setFormData] = useState(null);
   const navigate = useNavigate();
 
@@ -23,24 +23,29 @@ function AddSound() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const uploadedFile = await service.uploadSound(formData);
+      const token = localStorage.getItem("authToken");
+      const uploadedFile = await service.uploadSound(formData, token);
       setSoundURL(uploadedFile.fileUrl);
-      console.log(" uploaded file :::", uploadedFile)
+
+      const tagsArray = tags.split(",").map((tag) => tag.trim().toLowerCase()); //separated by commas
+      tagsArray.push(`${bpm} BPM`);
+
       const newSound = {
         title,
         bpm,
         description,
         soundURL: uploadedFile.fileUrl,
-        duration: uploadedFile.duration,
+        tags: tagsArray,
         // projectId,
       };
 
-      const createdSound = await service.createSound(newSound);
+      await service.createSound(newSound, token);
 
       setTitle("");
       setBpm("");
       setDescription("");
       setSoundURL("");
+      setTags("");
 
       navigate("/");
     } catch (error) {
@@ -73,6 +78,14 @@ function AddSound() {
           name="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+        />
+
+        <label>Tags (separated by commas)</label>
+        <input
+          type="text"
+          name="tags"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
         />
 
         <input type="file" onChange={(e) => handleFileUpload(e)} />

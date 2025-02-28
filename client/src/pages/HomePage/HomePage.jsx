@@ -16,15 +16,6 @@ function HomePage() {
       .catch((err) => console.log(err));
   }, []);
 
-  const handleDurationReady = (soundId, duration) => {
-    // Only update in the database if needed
-    service.updateSound(soundId, { duration })
-      .then((updatedSound) => {
-        console.log("Updated sound with duration:", updatedSound);
-      })
-      .catch((err) => console.log(err));
-  };
-
   return (
     <div className="HomePage">
       <h2>Sounds</h2>
@@ -41,11 +32,8 @@ function HomePage() {
               audioUrl={sound.soundURL} 
               title={sound.title}
               soundId={sound._id}
-              onReady={(duration) => handleDurationReady(sound._id, duration)}
-              // Optional customization props
-              waveColor="#6495ED"
-              progressColor="#4169E1"
               height={90}
+              tags={sound.tags}
             />
           </div>
         ))}

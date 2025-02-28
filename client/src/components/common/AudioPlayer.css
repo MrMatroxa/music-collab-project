@@ -1,9 +1,10 @@
 .audio-player {
-    background-color: #f7f7f7;
+    background-color: #1E2939;
     border-radius: 8px;
     padding: 15px;
     margin-bottom: 15px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    outline: none;
   }
   
   .waveform-container {
@@ -14,17 +15,26 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    color: rgb(232, 231, 231);
   }
   
+  .buttons-and-slider {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: flex-end; /* Align items to the right */
+  }
+
   .audio-info {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: end;
   }
   
   .track-title {
     margin: 0;
     font-weight: 600;
+    margin-right: 1em
   }
   
   .time-display {
@@ -35,11 +45,16 @@
   .control-buttons {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 1em;
+  }
+
+  .volume-slider {
+    width: 8em;
+    padding-top: 6px;
   }
   
   .play-pause-btn, .stop-btn, .mute-btn {
-    background-color: #8a2be2;
+    background-color: rgb(251, 165, 24);
     color: white;
     border: none;
     border-radius: 50%;
@@ -54,19 +69,9 @@
   }
   
   .play-pause-btn:hover, .stop-btn:hover, .mute-btn:hover {
-    background-color: #7a1fd0;
+    background-color: rgb(249, 203, 67);
   }
-  
-  .volume-control {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .volume-slider {
-    width: 80px;
-  }
-  
+
   @media (min-width: 768px) {
     .audio-controls {
       flex-direction: row;
