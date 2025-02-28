@@ -10,6 +10,7 @@ import Navbar from "./components/Navbar/Navbar";
 import IsPrivate from "./components/IsPrivate/IsPrivate";
 import IsAnon from "./components/IsAnon/IsAnon";
 import AddSound from "./pages/AddSound/AddSound";
+import SoundTagDetails from "./pages/SoundTagDetails/SoundTagDetais";
 
 function App() {
   return (
@@ -44,7 +45,8 @@ function App() {
             </IsAnon>
           }
         />
-         <Route path="/sounds/add" element={ <AddSound /> } />
+        <Route path="/sounds/tags/:tagId" element={<SoundTagDetails />} />
+        <Route path="/sounds/add" element={<AddSound />} />
       </Routes>
     </div>
   );
