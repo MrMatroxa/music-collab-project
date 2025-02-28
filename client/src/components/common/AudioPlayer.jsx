@@ -148,6 +148,8 @@ const AudioPlayer = ({
     }
   }, [wavesurfer, muted, volume]);
 
+
+  
   return (
     <div
       className={`audio-player ${className}`}
@@ -220,14 +222,15 @@ const AudioPlayer = ({
           </div>
         </div>
       </div>
-      <div className="tags-container">
+      <div className="tags-container flex flex-wrap gap-2">
+      {console.log("Rendering tags for", title, ":", tags)}
         {tags &&
           tags.length > 0 &&
           tags.map((tag) => (
             <Link
               key={tag._id}
               to={`/sounds/tags/${tag._id}`}
-              className="tag-link"
+              className="tag-link bg-yellow-500 text-white px-1.5 py-0.2 rounded-xs hover:bg-yellow-600 transition-colors duration-300"
             >
               {tag.name}
             </Link>

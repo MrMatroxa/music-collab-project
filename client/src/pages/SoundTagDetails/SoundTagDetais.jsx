@@ -2,6 +2,7 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import AudioPlayer from "../../components/common/AudioPlayer";
+import Loading from "../../components/Loading/Loading";
 
 const SERVER_URL =
   import.meta.env.REACT_APP_SERVER_URL || "http://localhost:5005";
@@ -35,8 +36,13 @@ export default function SoundTagDetails() {
     getTagDetails();
   }, [tagId]);
 
+  console.log("Tag:", tag);
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <>
+        <Loading />
+      </>
+    );
   }
 
   return (
@@ -45,17 +51,12 @@ export default function SoundTagDetails() {
       {sounds.length > 0 ? (
         sounds.map((sound) => (
           <div key={sound._id} className="sound-item">
-            <div className="sound-info">
-              <p>TITLE: {sound.title}</p>
-              <p>DESCRIPTION: {sound.description}</p>
-              <p>{sound.bpm} BPM</p>
-            </div>
             <AudioPlayer
               key={`player-${sound._id}`}
               audioUrl={sound.soundURL}
               title={sound.title}
               soundId={sound._id}
-              height={90}
+              height={60}
               tags={sound.tags}
             />
           </div>

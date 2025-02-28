@@ -22,17 +22,12 @@ function HomePage() {
       {sounds &&
         sounds.map((sound) => (
           <div key={sound._id} className="sound-item">
-            <div className="sound-info">
-              <p>TITLE {sound.title}</p>
-              <p>DESCRIPTION {sound.description}</p>
-              <p>{sound.bpm} BPM</p>
-            </div>
             
             <AudioPlayer 
               audioUrl={sound.soundURL} 
               title={sound.title}
               soundId={sound._id}
-              height={90}
+              height={60}
               tags={sound.tags}
             />
           </div>

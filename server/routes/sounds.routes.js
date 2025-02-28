@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const cloudinary = require("../config/cloudinary.config");
 
 const Sound = require("../models/Sound.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware.js");
@@ -171,7 +172,8 @@ router.delete("/:soundId", isAuthenticated, (req, res, next) => {
       }
 
       // Delete the sound
-      return Sound.findByIdAndDelete(soundId);
+      return cloudinary.v2.uploader.destroy(public_id, options)
+        .then(() => Sound.findByIdAndDelete(soundId));
     })
     .then(() => {
       res.status(200).json({ message: "Sound deleted successfully" });

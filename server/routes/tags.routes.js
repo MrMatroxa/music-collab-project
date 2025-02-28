@@ -20,11 +20,38 @@ router.get("/", (req, res, next) => {
 });
 
 // Get a single tag by ID and populate sounds
+// router.get("/:tagId", (req, res, next) => {
+//   const { tagId } = req.params;
+
+//   Tag.findById(tagId)
+//     .populate("sound") // Populate the sounds associated with the tag
+//     .then((tag) => {
+//       if (!tag) {
+//         return res.status(404).json({ message: "Tag not found" });
+//       }
+//       res.status(200).json(tag);
+//     })
+//     .catch((err) => next(err));
+// });
+
 router.get("/:tagId", (req, res, next) => {
   const { tagId } = req.params;
 
   Tag.findById(tagId)
-    .populate("sound") // Populate the sounds associated with the tag
+    .populate({
+      path: "sound",
+      populate: [
+        {
+          path: "tags", // Populate the tags within each sound
+          model: "Tag", // Specify the model to use for population
+        },
+        {
+          path: "creator",// Populate the tags within each sound
+          model: "User", // Specify the model to use for population
+          select: "-password -email -__v -_id" 
+        },
+      ],
+    })
     .then((tag) => {
       if (!tag) {
         return res.status(404).json({ message: "Tag not found" });
@@ -54,3 +81,7 @@ router.delete("/:tagId", (req, res, next) => {
 });
 
 module.exports = router;
+// sounds
+// sounds/:soundId
+// sounds/tags
+// sounds/tags/:tagId
