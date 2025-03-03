@@ -33,8 +33,13 @@ router.get("/:projectId", (req, res, next) => {
         },
       ],
     })
+    .populate({
+      path: "creator",
+      model: "User",
+      select: "-password -email -__v -_id",
+    })
     .populate("members", "username email")
-    .populate("soundId")
+
     .then((project) => {
       if (!project) {
         return res.status(404).json({ message: "Project not found" });

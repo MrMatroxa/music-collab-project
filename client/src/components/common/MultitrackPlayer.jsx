@@ -1,18 +1,19 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
-import Multitrack from 'wavesurfer-multitrack';
-import { 
-  FaPlay, 
-  FaPause, 
-  FaStop, 
-  FaVolumeMute, 
+import { useRef, useEffect, useState, useCallback } from "react";
+import Multitrack from "wavesurfer-multitrack";
+import { useWavesurfer } from "@wavesurfer/react";
+import {
+  FaPlay,
+  FaPause,
+  FaStop,
+  FaVolumeMute,
   FaVolumeUp,
   FaSearchPlus,
   FaSearchMinus,
   FaForward,
-  FaBackward
+  FaBackward,
 } from "react-icons/fa";
 import { Slider } from "@mui/material";
-import "./MultitrackPlayer.css"; // You'll need to create this file for styling
+import "./MultitrackPlayer.css";
 
 const formatTime = (seconds) => {
   if (!seconds && seconds !== 0) return "00:00";
@@ -26,6 +27,7 @@ const formatTime = (seconds) => {
 const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
   const containerRef = useRef(null);
   const multitrackRef = useRef(null);
+  const wavesurferRefs = useRef([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [zoom, setZoom] = useState(20);
   const [isReady, setIsReady] = useState(false);
@@ -34,29 +36,96 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
   const [volume, setVolume] = useState(initialVolume);
   const [muted, setMuted] = useState(false);
   const [trackVolumes, setTrackVolumes] = useState({});
+  const [trackDurations, setTrackDurations] = useState([]);
+
+  // Create a wavesurfer instance for each track to get its duration
+  useEffect(() => {
+    if (!soundTracks || soundTracks.length === 0) return;
+
+    // Clean up any previous references
+    wavesurferRefs.current = [];
+    setTrackDurations([]);
+    
+    // For each sound track, create a hidden container and wavesurfer instance
+    soundTracks.forEach((sound, index) => {
+      const hiddenContainerRef = document.createElement('div');
+      hiddenContainerRef.style.display = 'none';
+      document.body.appendChild(hiddenContainerRef);
+
+      const options = {
+        container: hiddenContainerRef,
+        height: 80,
+        waveColor: "rgb(249, 203, 67)",
+        progressColor: "rgb(251, 165, 24)",
+        url: sound.soundURL,
+        normalize: true,
+        cursorColor: "#333",
+        barWidth: 2,
+        barGap: 1,
+        backgroundColor: "#424242",
+      };
+
+      // Create the wavesurfer instance
+      import('wavesurfer.js').then(WaveSurfer => {
+        const wavesurfer = WaveSurfer.default.create(options);
+        
+        wavesurfer.on('ready', () => {
+          const trackDuration = wavesurfer.getDuration();
+          console.log(`Track ${sound._id} duration: ${trackDuration}`);
+          
+          setTrackDurations(prev => {
+            const newDurations = [...prev];
+            newDurations[index] = trackDuration;
+            
+            // Once all tracks have reported durations, set the max duration
+            if (newDurations.filter(d => d !== undefined).length === soundTracks.length) {
+              const maxDuration = Math.max(...newDurations.filter(d => !isNaN(d) && d !== undefined));
+              console.log("Setting max duration to:", maxDuration);
+              setDuration(maxDuration);
+            }
+            
+            return newDurations;
+          });
+        });
+
+        wavesurferRefs.current[index] = wavesurfer;
+      });
+
+      // Clean up function to remove the hidden container
+      return () => {
+        if (wavesurferRefs.current[index]) {
+          wavesurferRefs.current[index].destroy();
+        }
+        if (document.body.contains(hiddenContainerRef)) {
+          document.body.removeChild(hiddenContainerRef);
+        }
+      };
+    });
+  }, [soundTracks]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     // Convert soundTracks to the format expected by Multitrack
-    const tracks = soundTracks?.map(sound => ({
-      id: sound._id,
-      url: sound.url,
-      draggable: true,
-      startPosition: 0,
-      volume: 0.8,
-      options: {
-        waveColor: 'rgb(249, 203, 67)',
-        progressColor: 'rgb(251, 165, 24)',
-        cursorColor: '#333',
-        barWidth: 2,
-        barGap: 1,
-        backgroundColor: '#424242',
-      },
-      title: sound.title || 'Untitled',
-      creator: sound.creator?.name || 'Unknown',
-    })) || [];
-
+    const tracks =
+      soundTracks?.map((sound) => ({
+        id: sound._id,
+        url: sound.soundURL,
+        draggable: true,
+        startPosition: 0,
+        volume: 0.8,
+        options: {
+          waveColor: "rgb(249, 203, 67)",
+          progressColor: "rgb(251, 165, 24)",
+          cursorColor: "#333",
+          barWidth: 2,
+          barGap: 1,
+          backgroundColor: "#424242",
+        },
+        title: sound.title || "Untitled",
+        creator: sound.creator?.name || "Unknown",
+      })) || [];
+    console.log("these are tracks ::", tracks);
     // Initialize multitrack player
     const multitrack = Multitrack.create(
       tracks.length > 0 ? tracks : [{ id: 0 }],
@@ -65,16 +134,16 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
         minPxPerSec: zoom,
         rightButtonDrag: false,
         cursorWidth: 2,
-        cursorColor: '#D72F21',
-        trackBackground: '#424242',
-        trackBorderColor: '#7C7C7C',
+        cursorColor: "#D72F21",
+        trackBackground: "#424242",
+        trackBorderColor: "#7C7C7C",
         dragBounds: true,
         envelopeOptions: {
-          lineColor: 'rgba(251, 165, 24, 0.7)',
+          lineColor: "rgba(251, 165, 24, 0.7)",
           lineWidth: 3,
           dragPointSize: window.innerWidth < 600 ? 20 : 10,
-          dragPointFill: 'rgba(251, 165, 24, 0.8)',
-          dragPointStroke: 'rgba(255, 255, 255, 0.3)',
+          dragPointFill: "rgba(251, 165, 24, 0.8)",
+          dragPointStroke: "rgba(255, 255, 255, 0.3)",
         },
       }
     );
@@ -86,36 +155,22 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
     }, 250);
 
     // Set up event listeners
-    multitrack.on('start-position-change', ({ id, startPosition }) => {
+    multitrack.on("start-position-change", ({ id, startPosition }) => {
       console.log(`Track ${id} start position updated to ${startPosition}`);
     });
 
-    multitrack.on('volume-change', ({ id, volume }) => {
+    multitrack.on("volume-change", ({ id, volume }) => {
       console.log(`Track ${id} volume updated to ${volume}`);
-      setTrackVolumes(prev => ({ ...prev, [id]: volume }));
+      setTrackVolumes((prev) => ({ ...prev, [id]: volume }));
     });
 
-    multitrack.on('drop', ({ id }) => {
-      multitrack.addTrack({
-        id,
-        url: '/examples/audio/demo.wav',
-        startPosition: 0,
-        draggable: true,
-        options: {
-          waveColor: 'rgb(249, 203, 67)',
-          progressColor: 'rgb(251, 165, 24)',
-        },
-      });
-    });
-
-    multitrack.once('canplay', async () => {
+    multitrack.once("canplay", async () => {
       setIsReady(true);
-      setDuration(multitrack.getDuration());
+      
       try {
-        await multitrack.setSinkId('default');
-        console.log('Set sinkId to default');
+        await multitrack.setSinkId("default");
       } catch (error) {
-        console.error('Error setting audio output device:', error);
+        console.error("Error setting audio output device:", error);
       }
     });
 
@@ -158,13 +213,17 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
 
   const handleForward = useCallback(() => {
     if (multitrackRef.current) {
-      multitrackRef.current.setTime(multitrackRef.current.getCurrentTime() + 10);
+      multitrackRef.current.setTime(
+        multitrackRef.current.getCurrentTime() + 10
+      );
     }
   }, []);
 
   const handleBackward = useCallback(() => {
     if (multitrackRef.current) {
-      multitrackRef.current.setTime(multitrackRef.current.getCurrentTime() - 10);
+      multitrackRef.current.setTime(
+        multitrackRef.current.getCurrentTime() - 10
+      );
     }
   }, []);
 
@@ -195,25 +254,25 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
   return (
     <div className="multitrack-player">
       <div className="multitrack-container-wrapper">
-        <div 
-          ref={containerRef} 
+        <div
+          ref={containerRef}
           className="multitrack-container"
-          style={{ 
-            background: '#424242', 
-            color: '#fff',
-            minHeight: '300px',
-            width: '100%' 
+          style={{
+            background: "#424242",
+            color: "#fff",
+            minHeight: "300px",
+            width: "100%",
           }}
         ></div>
       </div>
-      
+
       <div className="player-controls">
         <div className="time-and-controls">
           <div className="time-display">
             <span className="current-time">{formatTime(currentTime)}</span>
             <span className="duration"> / {formatTime(duration)}</span>
           </div>
-          
+
           <div className="transport-controls">
             <button
               onClick={handleBackward}
@@ -230,11 +289,7 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
             >
               {isPlaying ? <FaPause /> : <FaPlay />}
             </button>
-            <button
-              onClick={handleStop}
-              className="stop-btn"
-              aria-label="Stop"
-            >
+            <button onClick={handleStop} className="stop-btn" aria-label="Stop">
               <FaStop />
             </button>
             <button
@@ -246,7 +301,7 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
             </button>
           </div>
         </div>
-        
+
         <div className="volume-and-zoom">
           <div className="volume-control">
             <button
@@ -269,8 +324,8 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
               }}
             />
           </div>
-          
-          <div className="zoom-control">
+
+          {/* <div className="zoom-control">
             <FaSearchMinus />
             <Slider
               aria-label="Zoom"
@@ -287,23 +342,9 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
               }}
             />
             <FaSearchPlus />
-          </div>
+          </div> */}
         </div>
       </div>
-      
-      {soundTracks && soundTracks.length > 0 && (
-        <div className="track-info">
-          <h3>Loaded Tracks</h3>
-          <ul className="track-list">
-            {soundTracks.map(track => (
-              <li key={track._id} className="track-item">
-                <span className="track-title">{track.title || 'Untitled'}</span>
-                <span className="track-creator">by {track.creator?.name || 'Unknown'}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };

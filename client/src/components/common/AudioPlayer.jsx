@@ -76,7 +76,6 @@ const AudioPlayer = ({
         service
           .updateSound(soundId, { duration })
           .then((updatedSound) => {
-            console.log("Updated sound with duration:", updatedSound);
             setDurationReported(true);
           })
           .catch((err) => console.log(err));

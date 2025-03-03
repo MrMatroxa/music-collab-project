@@ -1,138 +1,141 @@
 .multitrack-player {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    background-color: #2d2d2d;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    margin-bottom: 20px;
-    padding: 15px;
-  }
-  
-  .multitrack-container-wrapper {
-    width: 100%;
-    border: 1px solid #555;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: #2d2d2d;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  margin-bottom: 20px;
+  padding: 15px;
+}
+
+.multitrack-container-wrapper {
+  width: 100%;
+  border: 1px solid #555;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.player-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 5px;
+  background-color: #333;
+  margin-top: 10px;
+  border-radius: 4px;
+}
+
+.time-and-controls {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.time-display {
+  color: #ffffff;
+  font-family: monospace;
+  margin-right: 15px;
+}
+
+.current-time,
+.duration {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.transport-controls,
+.volume-control,
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.volume-and-zoom {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.multitrack-player button {
+  background-color: rgb(251, 165, 24);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: rgb(249, 203, 67);
+}
+
+button:disabled {
+  color: #777;
+  cursor: not-allowed;
+}
+
+.play-btn {
+  font-size: 18px;
+  background-color: rgba(251, 165, 24, 0.1);
+}
+
+.track-info {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #333;
+  border-radius: 4px;
+}
+
+.track-info h3 {
+  color: #fff;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.track-list {
+  list-style: none;
+  padding: 0;
+}
+
+.track-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid #555;
+}
+
+.track-item:last-child {
+  border-bottom: none;
+}
+
+.track-title {
+  color: rgb(249, 203, 67);
+  font-weight: 500;
+}
+
+.track-creator {
+  color: #999;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
   .player-controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 5px;
-    background-color: #333;
-    margin-top: 10px;
-    border-radius: 4px;
+    flex-direction: column;
+    gap: 15px;
   }
-  
-  .time-and-controls {
-    display: flex;
-    align-items: center;
-    flex: 1;
-  }
-  
-  .time-display {
-    color: #ffffff;
-    font-family: monospace;
-    margin-right: 15px;
-  }
-  
-  .current-time, .duration {
-    font-size: 14px;
-    font-weight: 500;
-  }
-  
-  .transport-controls, .volume-control, .zoom-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
+
   .volume-and-zoom {
-    display: flex;
-    align-items: center;
-    gap: 20px;
+    width: 100%;
+    justify-content: space-around;
   }
-  
-  button {
-    background-color: transparent;
-    color: rgb(249, 203, 67);
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: rgb(251, 165, 24);
-  }
-  
-  button:disabled {
-    color: #777;
-    cursor: not-allowed;
-  }
-  
-  .play-btn {
-    font-size: 18px;
-    background-color: rgba(251, 165, 24, 0.1);
-  }
-  
-  .track-info {
-    margin-top: 15px;
-    padding: 10px;
-    background-color: #333;
-    border-radius: 4px;
-  }
-  
-  .track-info h3 {
-    color: #fff;
-    margin-bottom: 10px;
-    font-size: 16px;
-  }
-  
-  .track-list {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .track-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    border-bottom: 1px solid #555;
-  }
-  
-  .track-item:last-child {
-    border-bottom: none;
-  }
-  
-  .track-title {
-    color: rgb(249, 203, 67);
-    font-weight: 500;
-  }
-  
-  .track-creator {
-    color: #999;
-    font-size: 14px;
-  }
-  
-  @media (max-width: 768px) {
-    .player-controls {
-      flex-direction: column;
-      gap: 15px;
-    }
-    
-    .volume-and-zoom {
-      width: 100%;
-      justify-content: space-around;
-    }
-  }
+}
