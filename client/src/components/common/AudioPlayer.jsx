@@ -9,8 +9,9 @@ import {
   FaVolumeUp,
 } from "react-icons/fa";
 import { Slider } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import service from "../../services/file-upload.service";
+import projectService from "../../services/project.service";
 
 const formatTime = (seconds) => {
   if (!seconds && seconds !== 0) return "00:00";
@@ -29,6 +30,7 @@ const AudioPlayer = ({
   height = 80,
   className = "",
   tags = [],
+  creator,
 }) => {
   const containerRef = useRef(null);
   const [duration, setDuration] = useState(null);
@@ -37,6 +39,7 @@ const AudioPlayer = ({
   const playerRef = useRef(null); // Add this ref for the entire player component
   const [isFocused, setIsFocused] = useState(false);
   const [durationReported, setDurationReported] = useState(false);
+  const navigate = useNavigate();
 
   // Initialize wavesurfer with our configuration
   const { wavesurfer, isPlaying, currentTime } = useWavesurfer({
@@ -52,6 +55,20 @@ const AudioPlayer = ({
     backgroundColor: "#424242",
   });
 
+  // Function to handle project creation and navigation
+  const handleCollabClick = async () => {
+    try {
+      const newProject = await projectService.createProject({
+        title: `Collab Project for ${title}`,
+        soundId: [soundId],
+        creator: creator._id,
+      });
+      navigate(`/projects/${newProject._id}`);
+    } catch (error) {
+      console.error("Error creating project:", error);
+    }
+  };
+
   // Handle duration updates
   const handleDurationReady = useCallback(
     (soundId, duration) => {
@@ -59,7 +76,6 @@ const AudioPlayer = ({
         service
           .updateSound(soundId, { duration })
           .then((updatedSound) => {
-            console.log("Updated sound with duration:", updatedSound);
             setDurationReported(true);
           })
           .catch((err) => console.log(err));
@@ -148,8 +164,25 @@ const AudioPlayer = ({
     }
   }, [wavesurfer, muted, volume]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (playerRef.current) {
+        if (playerRef.current.offsetWidth < 768) {
+          playerRef.current.classList.add("small-width");
+        } else {
+          playerRef.current.classList.remove("small-width");
+        }
+      }
+    };
 
-  
+    handleResize(); // Initial check
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   return (
     <div
       className={`audio-player ${className}`}
@@ -158,9 +191,12 @@ const AudioPlayer = ({
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
     >
+   
+     
       <div className="waveform-container">
         <div ref={containerRef} id={`waveform-${soundId}`} />
       </div>
+      
 
       <div className="audio-controls">
         <div className="audio-info">
@@ -177,7 +213,7 @@ const AudioPlayer = ({
               onClick={onPlayPause}
               className="play-pause-btn"
               aria-label={isPlaying ? "Pause" : "Play"}
-            >
+              >
               {isPlaying ? <FaPause /> : <FaPlay />}
             </button>
             <button onClick={onStop} className="stop-btn" aria-label="Stop">
@@ -188,7 +224,7 @@ const AudioPlayer = ({
                 onClick={toggleMute}
                 className="mute-btn"
                 aria-label={muted ? "Unmute" : "Mute"}
-              >
+                >
                 {muted ? <FaVolumeMute /> : <FaVolumeUp />}
               </button>
             </div>
@@ -218,24 +254,26 @@ const AudioPlayer = ({
                   color: "rgb(251, 165, 24)",
                 }),
               })}
-            />
+              />
           </div>
         </div>
       </div>
       <div className="tags-container flex flex-wrap gap-2">
-      {console.log("Rendering tags for", title, ":", tags)}
+              {creator && <div className="creator-info">Created by: {creator.name}</div>} 
+        {console.log("Rendering tags for", title, ":", tags)}
         {tags &&
           tags.length > 0 &&
           tags.map((tag) => (
             <Link
               key={tag._id}
               to={`/sounds/tags/${tag._id}`}
-              className="tag-link bg-yellow-500 text-white px-1.5 py-0.2 rounded-xs hover:bg-yellow-600 transition-colors duration-300"
+              className="tag-link bg-yellow-500 text-white text-center px-1.5 py-0.2 rounded-xs hover:bg-yellow-600 transition-colors duration-300"
             >
               {tag.name}
             </Link>
           ))}
       </div>
+      <button className="collab" onClick={handleCollabClick}>Collab</button>
     </div>
   );
 };

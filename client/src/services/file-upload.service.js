@@ -26,13 +26,20 @@ const uploadSound = (file, token) => {
 };
 
 const createSound = (newSound, token) => {
+  console.log("Sending sound creation request:", newSound);
   return api.post("/", newSound, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   })
-  .then(res => res.data)
-  .catch(errorHandler);
+  .then(res => {
+    console.log("Sound creation response:", res.data);
+    return res.data;
+  })
+  .catch(err => {
+    console.error("Sound creation error:", err.response?.data || err.message);
+    throw err;
+  });
 };
 
 const deleteSound = (id) => {
@@ -46,6 +53,8 @@ const getSoundsByUser = (userId) => {
     .then((res) => res.data)
     .catch(errorHandler);
 };
+
+
 
 const fileUploadService = {
     getSounds,

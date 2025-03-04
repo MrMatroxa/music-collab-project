@@ -7,6 +7,8 @@ const { isAuthenticated } = require("../middleware/jwt.middleware.js");
 
 const fileUploader = require("../config/cloudinary.config");
 const Tag = require("../models/Tag.model.js");
+const User = require("../models/User.model.js");
+const Project = require("../models/Project.model.js");
 
 // Upload sound file to cloudinary
 router.post("/upload", fileUploader.single("soundURL"), (req, res, next) => {
@@ -78,49 +80,59 @@ router.get("/:soundId", (req, res, next) => {
 
 // Create a new sound
 router.post("/", isAuthenticated, async (req, res, next) => {
-  // Add the current user as the creator
-  const { tags, ...rest } = req.body;
-  const newSound = {
-    ...rest,
-    creator: req.payload._id,
-  };
-
   try {
+    // Add the current user as the creator
+    const { tags = [], ...rest } = req.body;
+    const newSound = {
+      ...rest,
+      creator: req.payload._id,
+    };
+    
+    console.log("Creating sound with data:", newSound);
+    
+    // Create the sound first
     const createdSound = await Sound.create(newSound);
-    if (tags.length) {
-      for (const tag of tags) {
-        const foundTag = await Tag.findOne({ name: tag });
-        if (foundTag) {
-          foundTag.sound.push(createdSound._id);
-          await foundTag.save();
-          createdSound.tags.push(foundTag._id);
-          continue;
+    console.log("Sound created with ID:", createdSound._id);
+    
+    // Process tags if any
+    if (tags && tags.length > 0) {
+      const tagPromises = tags.map(async (tagName) => {
+        let tag = await Tag.findOne({ name: tagName.toLowerCase() });
+        if (!tag) {
+          tag = await Tag.create({
+            name: tagName.toLowerCase(),
+            sound: [createdSound._id]
+          });
+        } else {
+          // Add this sound to existing tag
+          if (!tag.sound.includes(createdSound._id)) {
+            tag.sound.push(createdSound._id);
+            await tag.save();
+          }
         }
-        const createdTag = await Tag.create({
-          name: tag,
-          sound: [createdSound._id],
-        });
-        createdSound.tags.push(createdTag._id);
-      }
+        return tag._id;
+      });
+      
+      // Resolve all tag promises
+      const tagIds = await Promise.all(tagPromises);
+      
+      // Add tags to sound
+      createdSound.tags = tagIds;
       await createdSound.save();
-      const populatedSound = createdSound.populate("creator", "username email");
-      res.status(201).json(populatedSound);
     }
+    
+    // Return populated sound
+    const populatedSound = await Sound.findById(createdSound._id)
+      .populate("creator", "name")
+      .populate("tags");
+      
+    console.log("Sending populated sound:", populatedSound);
+    res.status(201).json(populatedSound);
+    
   } catch (err) {
+    console.error("Error creating sound:", err);
     next(err);
   }
-
-  // Sound.create(newSound)
-  //   .then((createdSound) => {
-  //     return Sound.findById(createdSound._id).populate(
-  //       "creator",
-  //       "username email"
-  //     );
-  //   })
-  //   .then((populatedSound) => {
-  //     res.status(201).json(populatedSound);
-  //   })
-  //   .catch((err) => next(err));
 });
 
 // Update a sound
@@ -144,7 +156,7 @@ router.put("/:soundId", isAuthenticated, (req, res, next) => {
       // Update the sound
       return Sound.findByIdAndUpdate(soundId, req.body, { new: true }).populate(
         "creator",
-        "username email"
+        "name"
       );
     })
     .then((updatedSound) => {
@@ -172,8 +184,31 @@ router.delete("/:soundId", isAuthenticated, (req, res, next) => {
       }
 
       // Delete the sound
-      return cloudinary.v2.uploader.destroy(public_id, options)
-        .then(() => Sound.findByIdAndDelete(soundId));
+      return cloudinary.v2.uploader
+        .destroy(public_id, options)
+        .then(() => Sound.findByIdAndDelete(soundId))
+        .then(() => {
+          Tag.findOneAndUpdate([
+            { sound: soundId },
+            { $pull: { sound: soundId } },
+          ]);
+        })
+        .then(() => {
+          Project.findOneAndUpdate([
+            { soundId: soundId },
+            { $pull: { soundId: soundId } },
+          ]);
+        })
+        .then(() =>
+          User.find({ createdSounds: soundId, favoriteSounds: soundId })
+        )
+        .then(async (foundUsers) => {
+          for (const user of foundUsers) {
+            user.createdSounds.pull(soundId);
+            user.favoriteSounds.pull(soundId);
+            await user.save();
+          }
+        });
     })
     .then(() => {
       res.status(200).json({ message: "Sound deleted successfully" });
@@ -186,7 +221,7 @@ router.get("/user/:userId", (req, res, next) => {
   const { userId } = req.params;
 
   Sound.find({ creator: userId })
-    .populate("creator", "username email")
+    .populate("creator", "name")
     .then((sounds) => {
       res.status(200).json(sounds);
     })

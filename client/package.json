@@ -12,6 +12,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^6.4.6",
     "@mui/material": "^6.4.6",
     "@tailwindcss/vite": "^4.0.9",
     "@wavesurfer/react": "^1.0.9",
@@ -24,6 +25,7 @@
     "react-scripts": "^5.0.1",
     "tailwindcss": "^4.0.9",
     "vite-plugin-env-compatible": "^2.0.1",
+    "wavesurfer-multitrack": "^0.4.12",
     "wavesurfer.js": "^7.9.1"
   },
   "devDependencies": {

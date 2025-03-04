@@ -18,6 +18,36 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Name is required."],
     },
+    createdSounds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Sound",
+      },
+    ],
+    favoriteSounds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Sound",
+      },
+    ],
+    createdProjects: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Project",
+      },
+    ],
+    favoriteProjects: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Project",
+      },
+    ],
+    enrolledProjects: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Project",
+      },
+    ],
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`
