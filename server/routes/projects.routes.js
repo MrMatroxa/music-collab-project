@@ -27,8 +27,8 @@ router.get("/:projectId", (req, res, next) => {
           model: "Tag", // Specify the model to use for population
         },
         {
-          path: "creator", // Populate the tags within each sound
-          model: "User", // Specify the model to use for population
+          path: "creator",
+          model: "User", 
           select: "-password -email -__v -_id",
         },
       ],

@@ -56,7 +56,7 @@ router.get("/search", (req, res, next) => {
       { tags: { $regex: query, $options: "i" } },
     ],
   })
-    .populate("creator", "username email")
+    .populate("creator", "name")
     .then((sounds) => {
       res.status(200).json(sounds);
     })
@@ -68,7 +68,7 @@ router.get("/:soundId", (req, res, next) => {
   const { soundId } = req.params;
 
   Sound.findById(soundId)
-    .populate("creator", "username email")
+    .populate("creator", "name")
     .then((sound) => {
       if (!sound) {
         return res.status(404).json({ message: "Sound not found" });
@@ -222,6 +222,7 @@ router.get("/user/:userId", (req, res, next) => {
 
   Sound.find({ creator: userId })
     .populate("creator", "name")
+    .populate("tags")
     .then((sounds) => {
       res.status(200).json(sounds);
     })

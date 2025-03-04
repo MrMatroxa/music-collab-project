@@ -1,0 +1,28 @@
+.sounds-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .sound-item-profile-page {
+    /* Set a fixed width for all players to be equal */
+    width: 700px;
+    padding: 10px;
+    border-radius: 8px;
+    min-width: 0; /* Prevents content from overflowing */
+    overflow: hidden; /* Ensures content stays within boundaries */
+  }
+  
+  .projects-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .project-item {
+    width: 250px;
+    padding: 10px;
+    border-radius: 8px;
+  }
