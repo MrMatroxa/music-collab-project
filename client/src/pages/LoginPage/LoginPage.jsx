@@ -1,8 +1,8 @@
-import "./LoginPage.css";
 import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth.context";
 import authService from "../../services/auth.service";
+import { Container, Paper, Typography, TextField, Button, Box } from "@mui/material";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -20,53 +20,91 @@ function LoginPage() {
     e.preventDefault();
     const requestBody = { email, password };
 
-    // Send a request to the server using axios
-    /* 
-    axios.post(`${process.env.SERVER_URL}/auth/login`)
-      .then((response) => {})
-    */
-
-    // Or using a service
     authService
       .login(requestBody)
       .then((response) => {
-        // If the POST request is successful store the authentication token,
-        // after the token is stored authenticate the user
-        // and at last navigate to the home page
         storeToken(response.data.authToken);
         authenticateUser();
         navigate("/");
       })
       .catch((error) => {
-        // If the request resolves with an error, set the error message in the state
         const errorDescription = error.response.data.message;
         setErrorMessage(errorDescription);
       });
   };
 
   return (
-    <div className="LoginPage">
-      <h1>Login</h1>
-
-      <form onSubmit={handleLoginSubmit}>
-        <label>Email:</label>
-        <input type="email" name="email" value={email} onChange={handleEmail} />
-
-        <label>Password:</label>
-        <input
-          type="password"
-          name="password"
-          value={password}
-          onChange={handlePassword}
-        />
-
-        <button type="submit">Login</button>
-      </form>
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
-
-      <p>Don't have an account yet?</p>
-      <Link to={"/signup"}> Sign Up</Link>
-    </div>
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 4, 
+          bgcolor: "background.paper", 
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)'
+        }}
+      >
+        <Typography variant="h4" component="h1" gutterBottom sx={{ 
+          color: 'rgb(251, 165, 24)',
+          fontWeight: 'bold',
+          mb: 3
+        }}>
+          Login
+        </Typography>
+        
+        <Box component="form" onSubmit={handleLoginSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <TextField
+            label="Email"
+            variant="outlined"
+            fullWidth
+            value={email}
+            onChange={handleEmail}
+            required
+            sx={{ bgcolor: 'background.paper' }}
+          />
+          
+          <TextField
+            label="Password"
+            variant="outlined"
+            type="password"
+            fullWidth
+            value={password}
+            onChange={handlePassword}
+            required
+            sx={{ bgcolor: 'background.paper' }}
+          />
+          
+          {errorMessage && (
+            <Typography variant="body2" color="error">
+              {errorMessage}
+            </Typography>
+          )}
+          
+          <Button 
+            type="submit" 
+            variant="contained" 
+            size="large"
+            sx={{ 
+              mt: 2,
+              py: 1.5,
+              fontWeight: 'bold',
+              bgcolor: 'rgb(251, 165, 24)',
+              boxShadow: '0 4px 12px rgba(251, 165, 24, 0.3)',
+              '&:hover': {
+                bgcolor: 'rgb(249, 203, 67)',
+                boxShadow: '0 6px 16px rgba(249, 203, 67, 0.45)',
+              }
+            }}
+          >
+            Login
+          </Button>
+        </Box>
+        
+        <Typography variant="body2" sx={{ mt: 2 }}>
+          Don't have an account yet? <Link to="/signup" style={{ color: 'rgb(251, 165, 24)' }}>Sign Up</Link>
+        </Typography>
+      </Paper>
+    </Container>
   );
 }
 

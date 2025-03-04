@@ -1,7 +1,7 @@
-import "./SignupPage.css";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import authService from "../../services/auth.service";
+import { Container, Paper, Typography, TextField, Button, Box } from "@mui/material";
 
 function SignupPage() {
   const [email, setEmail] = useState("");
@@ -17,61 +17,101 @@ function SignupPage() {
 
   const handleSignupSubmit = (e) => {
     e.preventDefault();
-    // Create an object representing the request body
     const requestBody = { email, password, name };
 
-    // Send a request to the server using axios
-    /* 
-    const authToken = localStorage.getItem("authToken");
-    axios.post(
-      `${process.env.SERVER_URL}/auth/signup`, 
-      requestBody, 
-      { headers: { Authorization: `Bearer ${authToken}` },
-    })
-    .then((response) => {})
-    */
-
-    // Or using a service
     authService
       .signup(requestBody)
       .then((response) => {
-        // If the POST request is successful redirect to the login page
         navigate("/login");
       })
       .catch((error) => {
-        // If the request resolves with an error, set the error message in the state
         const errorDescription = error.response.data.message;
         setErrorMessage(errorDescription);
       });
   };
 
   return (
-    <div className="SignupPage">
-      <h1>Sign Up</h1>
-
-      <form onSubmit={handleSignupSubmit}>
-        <label>Email:</label>
-        <input type="email" name="email" value={email} onChange={handleEmail} />
-
-        <label>Password:</label>
-        <input
-          type="password"
-          name="password"
-          value={password}
-          onChange={handlePassword}
-        />
-
-        <label>Name:</label>
-        <input type="text" name="name" value={name} onChange={handleName} />
-
-        <button type="submit">Sign Up</button>
-      </form>
-
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
-
-      <p>Already have account?</p>
-      <Link to={"/login"}> Login</Link>
-    </div>
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 4, 
+          bgcolor: "background.paper", 
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)'
+        }}
+      >
+        <Typography variant="h4" component="h1" gutterBottom sx={{ 
+          color: 'rgb(251, 165, 24)',
+          fontWeight: 'bold',
+          mb: 3
+        }}>
+          Sign Up
+        </Typography>
+        
+        <Box component="form" onSubmit={handleSignupSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <TextField
+            label="Email"
+            variant="outlined"
+            fullWidth
+            value={email}
+            onChange={handleEmail}
+            required
+            sx={{ bgcolor: 'background.paper' }}
+          />
+          
+          <TextField
+            label="Password"
+            variant="outlined"
+            type="password"
+            fullWidth
+            value={password}
+            onChange={handlePassword}
+            required
+            sx={{ bgcolor: 'background.paper' }}
+          />
+          
+          <TextField
+            label="Name"
+            variant="outlined"
+            fullWidth
+            value={name}
+            onChange={handleName}
+            required
+            sx={{ bgcolor: 'background.paper' }}
+          />
+          
+          {errorMessage && (
+            <Typography variant="body2" color="error">
+              {errorMessage}
+            </Typography>
+          )}
+          
+          <Button 
+            type="submit" 
+            variant="contained" 
+            size="large"
+            sx={{ 
+              mt: 2,
+              py: 1.5,
+              fontWeight: 'bold',
+              bgcolor: 'rgb(251, 165, 24)',
+              boxShadow: '0 4px 12px rgba(251, 165, 24, 0.3)',
+              '&:hover': {
+                bgcolor: 'rgb(249, 203, 67)',
+                boxShadow: '0 6px 16px rgba(249, 203, 67, 0.45)',
+              }
+            }}
+          >
+            Sign Up
+          </Button>
+        </Box>
+        
+        <Typography variant="body2" sx={{ mt: 2 }}>
+          Already have an account? <Link to="/login" style={{ color: 'rgb(251, 165, 24)' }}>Login</Link>
+        </Typography>
+      </Paper>
+    </Container>
   );
 }
 

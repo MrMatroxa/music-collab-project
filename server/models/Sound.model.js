@@ -24,6 +24,7 @@ const soundSchema = new Schema(
       {
         type: Schema.Types.ObjectId,
         ref: "Project",
+        required: true,
       },
     ],
     creator: {

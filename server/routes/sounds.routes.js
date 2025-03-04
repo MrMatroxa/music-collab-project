@@ -123,7 +123,7 @@ router.post("/", isAuthenticated, async (req, res, next) => {
     
     // Return populated sound
     const populatedSound = await Sound.findById(createdSound._id)
-      .populate("creator", "username email")
+      .populate("creator", "name")
       .populate("tags");
       
     console.log("Sending populated sound:", populatedSound);
@@ -156,7 +156,7 @@ router.put("/:soundId", isAuthenticated, (req, res, next) => {
       // Update the sound
       return Sound.findByIdAndUpdate(soundId, req.body, { new: true }).populate(
         "creator",
-        "username email"
+        "name"
       );
     })
     .then((updatedSound) => {
@@ -221,7 +221,7 @@ router.get("/user/:userId", (req, res, next) => {
   const { userId } = req.params;
 
   Sound.find({ creator: userId })
-    .populate("creator", "username email")
+    .populate("creator", "name")
     .then((sounds) => {
       res.status(200).json(sounds);
     })

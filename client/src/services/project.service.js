@@ -28,6 +28,16 @@ const getAllProjects = () => {
     .then((response) => response.data);
 };
 
+const getAllProjectsByUser = (userId) => {
+  return axios
+    .get(`${API_URL}/user/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+    })
+    .then((response) => response.data);
+}
+
 // Get a single project by id
 const getProject = (projectId) => {
   return axios
@@ -82,6 +92,7 @@ const projectService = {
   updateProject,
   deleteProject,
   addSoundToProject,
+  getAllProjectsByUser
 };
 
 export default projectService;
