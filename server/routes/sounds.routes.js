@@ -82,18 +82,19 @@ router.get("/:soundId", (req, res, next) => {
 router.post("/", isAuthenticated, async (req, res, next) => {
   try {
     // Add the current user as the creator
-    const { tags = [], ...rest } = req.body;
+    const { tags = [], projectId = [], ...rest } = req.body;
     const newSound = {
       ...rest,
       creator: req.payload._id,
+      projectId: projectId, // Make sure projectId is properly assigned
     };
-    
+
     console.log("Creating sound with data:", newSound);
-    
+
     // Create the sound first
     const createdSound = await Sound.create(newSound);
     console.log("Sound created with ID:", createdSound._id);
-    
+
     // Process tags if any
     if (tags && tags.length > 0) {
       const tagPromises = tags.map(async (tagName) => {
@@ -101,7 +102,7 @@ router.post("/", isAuthenticated, async (req, res, next) => {
         if (!tag) {
           tag = await Tag.create({
             name: tagName.toLowerCase(),
-            sound: [createdSound._id]
+            sound: [createdSound._id],
           });
         } else {
           // Add this sound to existing tag
@@ -112,23 +113,23 @@ router.post("/", isAuthenticated, async (req, res, next) => {
         }
         return tag._id;
       });
-      
+
       // Resolve all tag promises
       const tagIds = await Promise.all(tagPromises);
-      
+
       // Add tags to sound
       createdSound.tags = tagIds;
       await createdSound.save();
     }
-    
+
     // Return populated sound
     const populatedSound = await Sound.findById(createdSound._id)
       .populate("creator", "name")
-      .populate("tags");
-      
+      .populate("tags")
+      .populate("projectId");
+
     console.log("Sending populated sound:", populatedSound);
     res.status(201).json(populatedSound);
-    
   } catch (err) {
     console.error("Error creating sound:", err);
     next(err);

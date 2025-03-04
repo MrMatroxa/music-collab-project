@@ -85,6 +85,16 @@ const addSoundToProject = (projectId, soundId, token) => {
     .then((response) => response.data);
 };
 
+const getRelatedProjects = (masterSoundId) => {
+  return axios
+    .get(`${API_URL}/related/${masterSoundId}`, {
+      headers: {
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+    })
+    .then((response) => response.data);
+};
+
 const projectService = {
   createProject,
   getAllProjects,
@@ -92,7 +102,8 @@ const projectService = {
   updateProject,
   deleteProject,
   addSoundToProject,
-  getAllProjectsByUser
+  getAllProjectsByUser,
+  getRelatedProjects
 };
 
 export default projectService;

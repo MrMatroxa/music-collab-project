@@ -43,6 +43,7 @@ function AddSound() {
         description,
         soundURL: uploadedFile.fileUrl,
         tags: tagsArray,
+        isMasterSound: true,
       };
 
       const createdSound = await service.createSound(newSound, token);

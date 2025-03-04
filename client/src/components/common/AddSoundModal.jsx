@@ -2,9 +2,22 @@ import { useState } from "react";
 import "./AddSoundModal.css";
 import fileUploadService from "../../services/file-upload.service";
 import projectService from "../../services/project.service";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+} from "@mui/material";
 
-function AddSoundModal({ open, handleClose, projectId, inheritedBpm, onSoundAdded }) {
+function AddSoundModal({
+  open,
+  handleClose,
+  projectId,
+  inheritedBpm,
+  onSoundAdded,
+}) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [soundURL, setSoundURL] = useState("");
@@ -23,7 +36,7 @@ function AddSoundModal({ open, handleClose, projectId, inheritedBpm, onSoundAdde
     e.preventDefault();
     setIsUploading(true);
     setErrorMessage("");
-    
+
     try {
       console.log("Starting sound upload process");
       // 1. Upload the audio file
@@ -31,38 +44,46 @@ function AddSoundModal({ open, handleClose, projectId, inheritedBpm, onSoundAdde
       console.log("Uploading audio file...");
       const uploadedFile = await fileUploadService.uploadSound(formData, token);
       console.log("File uploaded successfully:", uploadedFile);
-      
+
       // 2. Create the sound with BPM inherited from project
-      const tagsArray = tags.split(",")
-        .filter(tag => tag.trim()) // Filter out empty tags
+      const tagsArray = tags
+        .split(",")
+        .filter((tag) => tag.trim()) // Filter out empty tags
         .map((tag) => tag.trim().toLowerCase());
       tagsArray.push(`${inheritedBpm} BPM`);
-      
+
       const newSound = {
         title,
         bpm: inheritedBpm, // Use the inherited BPM
         description,
         soundURL: uploadedFile.fileUrl,
         tags: tagsArray,
+        // Add projectId here to ensure the sound is associated with this project from creation
+        projectId: [projectId],
+        isMasterSound: false,
       };
-      
+
       console.log("Creating sound with data:", newSound);
       // 3. Save the sound to database
       const createdSound = await fileUploadService.createSound(newSound, token);
       console.log("Sound created successfully:", createdSound);
-      
+
       if (!createdSound || !createdSound._id) {
         throw new Error("Sound creation failed - received invalid response");
       }
-      
+
       // 4. Add the sound to the project
       console.log(`Adding sound ${createdSound._id} to project ${projectId}`);
-      await projectService.addSoundToProject(projectId, createdSound._id, token);
+      await projectService.addSoundToProject(
+        projectId,
+        createdSound._id,
+        token
+      );
       console.log("Sound added to project successfully");
-      
+
       // 5. Notify parent component that sound was added
       onSoundAdded();
-      
+
       // 6. Reset form and close modal
       setTitle("");
       setDescription("");
@@ -71,7 +92,6 @@ function AddSoundModal({ open, handleClose, projectId, inheritedBpm, onSoundAdde
       setFormData(null);
       handleClose();
       console.log("Modal closed successfully");
-      
     } catch (error) {
       console.error("Error adding sound to project:", error);
       setErrorMessage(`Error: ${error.message || "Unknown error occurred"}`);
@@ -94,7 +114,7 @@ function AddSoundModal({ open, handleClose, projectId, inheritedBpm, onSoundAdde
             onChange={(e) => setTitle(e.target.value)}
             required
           />
-          
+
           <TextField
             label="Description"
             fullWidth
@@ -104,7 +124,7 @@ function AddSoundModal({ open, handleClose, projectId, inheritedBpm, onSoundAdde
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          
+
           <TextField
             label="Tags (separated by commas)"
             fullWidth
@@ -112,7 +132,7 @@ function AddSoundModal({ open, handleClose, projectId, inheritedBpm, onSoundAdde
             value={tags}
             onChange={(e) => setTags(e.target.value)}
           />
-          
+
           <div className="file-upload-container">
             <input
               type="file"
@@ -126,11 +146,13 @@ function AddSoundModal({ open, handleClose, projectId, inheritedBpm, onSoundAdde
         </form>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="primary">Cancel</Button>
-        <Button 
-          onClick={handleSubmit} 
-          color="primary" 
-          variant="contained" 
+        <Button onClick={handleClose} color="primary">
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          color="primary"
+          variant="contained"
           disabled={isUploading || !formData}
         >
           {isUploading ? "Uploading..." : "Add Sound"}

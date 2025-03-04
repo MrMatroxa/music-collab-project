@@ -28,7 +28,7 @@ router.get("/:projectId", (req, res, next) => {
         },
         {
           path: "creator",
-          model: "User", 
+          model: "User",
           select: "-password -email -__v -_id",
         },
       ],
@@ -45,6 +45,34 @@ router.get("/:projectId", (req, res, next) => {
         return res.status(404).json({ message: "Project not found" });
       }
       res.status(200).json(project);
+    })
+    .catch((err) => next(err));
+});
+
+// Get related projects (sharing the same master sound)
+router.get("/related/:masterSoundId", (req, res, next) => {
+  const { masterSoundId } = req.params;
+
+  Project.find({ masterSoundId: masterSoundId })
+    .populate("creator", "name")
+    .populate("soundId")
+    .then((projects) => {
+      res.status(200).json(projects);
+    })
+    .catch((err) => next(err));
+});
+
+// Get family tree for a project
+router.get("/family-tree/:masterSoundId", (req, res, next) => {
+  const { masterSoundId } = req.params;
+
+  Project.find({ masterSoundId: masterSoundId })
+    .populate("creator", "name")
+    .populate("soundId")
+    .then((projects) => {
+      // Sort projects by creation date to show evolution
+      projects.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      res.status(200).json(projects);
     })
     .catch((err) => next(err));
 });
@@ -81,17 +109,18 @@ router.put("/:projectId", isAuthenticated, (req, res, next) => {
       }
 
       // Check if user is the creator or a member of the project
-      const isCreator = project.creator.toString() === req.payload._id;
-      const isMember = project.members.some(
-        (member) => member.toString() === req.payload._id
-      );
+      const isCreator =
+        project.creator && project.creator.toString() === req.payload._id;
+      const isMember =
+        project.members &&
+        project.members.some(
+          (member) => member && member.toString() === req.payload._id
+        );
 
       if (!isCreator && !isMember) {
-        return res
-          .status(403)
-          .json({
-            message: "You don't have permission to update this project",
-          });
+        return res.status(403).json({
+          message: "You don't have permission to update this project",
+        });
       }
 
       // Update the project
@@ -119,11 +148,9 @@ router.delete("/:projectId", isAuthenticated, (req, res, next) => {
 
       // Only creator can delete projects
       if (project.creator.toString() !== req.payload._id) {
-        return res
-          .status(403)
-          .json({
-            message: "You don't have permission to delete this project",
-          });
+        return res.status(403).json({
+          message: "You don't have permission to delete this project",
+        });
       }
 
       // Delete the project
@@ -184,14 +211,23 @@ router.post(
         }
 
         // Check if user is the creator
-        if (project.creator.toString() !== req.payload._id) {
+        const isCreator =
+          project.creator && project.creator.toString() === req.payload._id;
+
+        if (!isCreator) {
           return res
             .status(403)
             .json({ message: "Only project creator can add members" });
         }
 
         // Check if user is already a member
-        if (project.members.includes(userId)) {
+        const itemExists =
+          project.members &&
+          project.members.some(
+            (member) => member && member.toString() === userId
+          );
+
+        if (itemExists) {
           return res
             .status(400)
             .json({ message: "User is already a member of this project" });
@@ -228,21 +264,21 @@ router.delete(
         }
 
         // Check if user is the creator or the member requesting to leave
-        if (
-          project.creator.toString() !== req.payload._id &&
-          userId !== req.payload._id
-        ) {
-          return res
-            .status(403)
-            .json({
-              message: "You don't have permission to remove this member",
-            });
+        const isCreator =
+          project.creator && project.creator.toString() === req.payload._id;
+
+        if (!isCreator && userId !== req.payload._id) {
+          return res.status(403).json({
+            message: "You don't have permission to remove this member",
+          });
         }
 
         // Remove the user from members
-        project.members = project.members.filter(
-          (member) => member.toString() !== userId
-        );
+        project.members =
+          project.members &&
+          project.members.filter(
+            (member) => member && member.toString() !== userId
+          );
         return project.save();
       })
       .then((updatedProject) => {
@@ -272,22 +308,26 @@ router.post(
         }
 
         // Check if user is the creator or a member
-        const isCreator = project.creator.toString() === req.payload._id;
-        const isMember = project.members.some(
-          (member) => member.toString() === req.payload._id
-        );
+        const isCreator =
+          project.creator && project.creator.toString() === req.payload._id;
+        const isMember =
+          project.members &&
+          project.members.some(
+            (member) => member && member.toString() === req.payload._id
+          );
 
         if (!isCreator && !isMember) {
-          return res
-            .status(403)
-            .json({
-              message:
-                "You don't have permission to add sounds to this project",
-            });
+          return res.status(403).json({
+            message: "You don't have permission to add sounds to this project",
+          });
         }
 
         // Check if sound is already in the project
-        if (project.soundId.includes(soundId)) {
+        const itemExists =
+          project.soundId &&
+          project.soundId.some((id) => id && id.toString() === soundId);
+
+        if (itemExists) {
           return res
             .status(400)
             .json({ message: "Sound is already in this project" });
@@ -324,24 +364,25 @@ router.delete(
         }
 
         // Check if user is the creator or a member
-        const isCreator = project.creator.toString() === req.payload._id;
-        const isMember = project.members.some(
-          (member) => member.toString() === req.payload._id
-        );
+        const isCreator =
+          project.creator && project.creator.toString() === req.payload._id;
+        const isMember =
+          project.members &&
+          project.members.some(
+            (member) => member && member.toString() === req.payload._id
+          );
 
         if (!isCreator && !isMember) {
-          return res
-            .status(403)
-            .json({
-              message:
-                "You don't have permission to remove sounds from this project",
-            });
+          return res.status(403).json({
+            message:
+              "You don't have permission to remove sounds from this project",
+          });
         }
 
         // Remove the sound
-        project.soundId = project.soundId.filter(
-          (id) => id.toString() !== soundId
-        );
+        project.soundId =
+          project.soundId &&
+          project.soundId.filter((id) => id && id.toString() !== soundId);
         return project.save();
       })
       .then((updatedProject) => {

@@ -55,13 +55,23 @@ const AudioPlayer = ({
     backgroundColor: "#424242",
   });
 
-  // Function to handle project creation and navigation
+  // Modified handleCollabClick function in AudioPlayer.jsx
   const handleCollabClick = async () => {
     try {
+      // Get the current user's ID from localStorage token
+      const token = localStorage.getItem("authToken");
+      const userPayload = JSON.parse(atob(token.split(".")[1]));
+      const currentUserId = userPayload._id;
+
       const newProject = await projectService.createProject({
-        title: `Collab Project for ${title}`,
+        title: `My version of ${title}`,
         soundId: [soundId],
-        creator: creator._id,
+        masterSoundId: soundId, // Track the original sound
+        creator: currentUserId, // Set current user as creator, not the original creator
+        isFork: true, // Flag as fork
+        parentProjectId: null, // Initially null as it's forked from a sound, not a project
+        // Add the original creator to the members list to track collaboration
+        members: creator._id !== currentUserId ? [creator._id] : [],
       });
       navigate(`/projects/${newProject._id}`);
     } catch (error) {
@@ -191,12 +201,9 @@ const AudioPlayer = ({
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
     >
-   
-     
       <div className="waveform-container">
         <div ref={containerRef} id={`waveform-${soundId}`} />
       </div>
-      
 
       <div className="audio-controls">
         <div className="audio-info">
@@ -213,7 +220,7 @@ const AudioPlayer = ({
               onClick={onPlayPause}
               className="play-pause-btn"
               aria-label={isPlaying ? "Pause" : "Play"}
-              >
+            >
               {isPlaying ? <FaPause /> : <FaPlay />}
             </button>
             <button onClick={onStop} className="stop-btn" aria-label="Stop">
@@ -224,7 +231,7 @@ const AudioPlayer = ({
                 onClick={toggleMute}
                 className="mute-btn"
                 aria-label={muted ? "Unmute" : "Mute"}
-                >
+              >
                 {muted ? <FaVolumeMute /> : <FaVolumeUp />}
               </button>
             </div>
@@ -254,12 +261,14 @@ const AudioPlayer = ({
                   color: "rgb(251, 165, 24)",
                 }),
               })}
-              />
+            />
           </div>
         </div>
       </div>
       <div className="tags-container flex flex-wrap gap-2">
-              {creator && <div className="creator-info">Created by: {creator.name}</div>} 
+        {creator && (
+          <div className="creator-info">Created by: {creator.name}</div>
+        )}
         {console.log("Rendering tags for", title, ":", tags)}
         {tags &&
           tags.length > 0 &&
@@ -273,7 +282,9 @@ const AudioPlayer = ({
             </Link>
           ))}
       </div>
-      <button className="collab" onClick={handleCollabClick}>Collab</button>
+      <button className="collab" onClick={handleCollabClick}>
+        Collab
+      </button>
     </div>
   );
 };
