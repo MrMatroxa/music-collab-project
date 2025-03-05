@@ -50,13 +50,22 @@ router.get("/:projectId", (req, res, next) => {
 });
 
 // Get related projects (sharing the same master sound)
-router.get("/related/:masterSoundId", (req, res, next) => {
+router.get("/related/:masterSoundId", isAuthenticated, (req, res, next) => {
   const { masterSoundId } = req.params;
 
-  Project.find({ masterSoundId: masterSoundId })
+  console.log("Getting related projects for masterSoundId:", masterSoundId);
+
+  Project.find({
+    $or: [
+      { masterSoundId: masterSoundId },
+      { soundId: masterSoundId }, // Also find projects that have this sound directly
+    ],
+  })
     .populate("creator", "name")
+    .populate("members", "name")
     .populate("soundId")
     .then((projects) => {
+      console.log(`Found ${projects.length} related projects`);
       res.status(200).json(projects);
     })
     .catch((err) => next(err));
@@ -79,6 +88,25 @@ router.get("/family-tree/:masterSoundId", (req, res, next) => {
 
 // Create a new project
 router.post("/", isAuthenticated, (req, res, next) => {
+  // Add the current user as the creator
+  const newProject = {
+    ...req.body,
+    creator: req.payload._id,
+  };
+
+  Project.create(newProject)
+    .then((createdProject) => {
+      return Project.findById(createdProject._id)
+        .populate("creator", "name")
+        .populate("soundId");
+    })
+    .then((populatedProject) => {
+      res.status(201).json(populatedProject);
+    })
+    .catch((err) => next(err));
+});
+
+router.post("/related", isAuthenticated, (req, res, next) => {
   // Add the current user as the creator
   const newProject = {
     ...req.body,

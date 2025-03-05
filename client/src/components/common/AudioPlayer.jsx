@@ -31,6 +31,7 @@ const AudioPlayer = ({
   className = "",
   tags = [],
   creator,
+  parentProjectId,
 }) => {
   const containerRef = useRef(null);
   const [duration, setDuration] = useState(null);
@@ -61,18 +62,35 @@ const AudioPlayer = ({
       // Get the current user's ID from localStorage token
       const token = localStorage.getItem("authToken");
       const userPayload = JSON.parse(atob(token.split(".")[1]));
+      
       const currentUserId = userPayload._id;
-
-      const newProject = await projectService.createProject({
+      console.log("creator:", creator);
+      
+      // Create the related project first
+      const newProject = await projectService.createRelatedProject({
         title: `My version of ${title}`,
         soundId: [soundId],
         masterSoundId: soundId, // Track the original sound
         creator: currentUserId, // Set current user as creator, not the original creator
         isFork: true, // Flag as fork
-        parentProjectId: null, // Initially null as it's forked from a sound, not a project
+        parentProjectId: parentProjectId, // Track the original project
         // Add the original creator to the members list to track collaboration
         members: creator._id !== currentUserId ? [creator._id] : [],
       });
+      
+      // Now update the parent project with the child project reference
+      if (parentProjectId) {
+        try {
+          await projectService.updateProject(parentProjectId, {
+            childProjectId: newProject._id
+          });
+          console.log("Parent project updated with child reference");
+        } catch (updateError) {
+          console.error("Error updating parent project:", updateError);
+          // Continue even if this fails - the fork is still created
+        }
+      }
+      
       navigate(`/projects/${newProject._id}`);
     } catch (error) {
       console.error("Error creating project:", error);

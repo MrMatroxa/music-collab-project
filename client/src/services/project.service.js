@@ -17,6 +17,16 @@ const createProject = (projectData) => {
     .then((response) => response.data);
 };
 
+const createRelatedProject = (projectData) => {
+  return axios
+    .post(`${API_URL}/related`, projectData, {
+      headers: {
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+    })
+    .then((response) => response.data);
+};
+
 // Get all projects
 const getAllProjects = () => {
   return axios
@@ -36,7 +46,7 @@ const getAllProjectsByUser = (userId) => {
       },
     })
     .then((response) => response.data);
-}
+};
 
 // Get a single project by id
 const getProject = (projectId) => {
@@ -88,6 +98,7 @@ const addSoundToProject = (projectId, soundId, token) => {
 const getRelatedProjects = (masterSoundId) => {
   return axios
     .get(`${API_URL}/related/${masterSoundId}`, {
+      // Remove the extra "projects/" in the URL
       headers: {
         Authorization: `Bearer ${getAuthToken()}`,
       },
@@ -103,7 +114,8 @@ const projectService = {
   deleteProject,
   addSoundToProject,
   getAllProjectsByUser,
-  getRelatedProjects
+  getRelatedProjects,
+  createRelatedProject,
 };
 
 export default projectService;

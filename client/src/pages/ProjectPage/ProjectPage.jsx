@@ -38,16 +38,28 @@ function ProjectPage() {
       const projectData = await projectService.getProject(projectId);
       setProject(projectData);
 
-      // If it has a master sound, find related projects with the same master
-      if (projectData.masterSoundId) {
+      // Find the master sound ID - either directly on this project or from its related info
+      const masterSoundId =
+        projectData.masterSoundId || projectData.soundId?.[0]?._id;
+
+      if (masterSoundId) {
         try {
-          const related = await projectService.getRelatedProjects(
-            projectData.masterSoundId
+          console.log(
+            "Fetching related projects for masterSoundId:",
+            masterSoundId
           );
-          setRelatedProjects(related.filter((p) => p._id !== projectId));
+          const related = await projectService.getRelatedProjects(
+            masterSoundId
+          );
+          console.log("Related projects response:", related);
+
+          // Filter out the current project from related projects
+          const filteredRelated = related.filter((p) => p._id !== projectId);
+          console.log("Filtered related projects:", filteredRelated);
+
+          setRelatedProjects(filteredRelated);
         } catch (relatedError) {
           console.error("Error fetching related projects:", relatedError);
-          // Still allow the page to load even if related projects can't be fetched
           setRelatedProjects([]);
         }
       }
@@ -123,33 +135,12 @@ function ProjectPage() {
         <MultitrackPlayer soundTracks={project.soundId} />
       </div>
 
-      {project.masterSoundId && (
+      {/* Show family tree if there are related projects */}
+      {relatedProjects && relatedProjects.length > 0 && (
         <SoundFamilyTree
           originalProject={project}
           relatedProjects={relatedProjects}
         />
-      )}
-
-      {/* Keep a simpler version as fallback if there's no masterSoundId */}
-      {!project.masterSoundId && relatedProjects.length > 0 && (
-        <div className="related-projects">
-          <h3>Other versions of this sound</h3>
-          <div className="versions-list">
-            {relatedProjects.map((project) => (
-              <Link
-                to={`/projects/${project._id}`}
-                key={project._id}
-                className="version-item"
-              >
-                <div>
-                  <h4>{project.title}</h4>
-                  <p>By: {project.creator?.name}</p>
-                  <p>{project.soundId?.length || 0} sounds</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
       )}
 
       <AddSoundModal

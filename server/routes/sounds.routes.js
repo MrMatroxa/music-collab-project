@@ -25,7 +25,7 @@ router.post("/upload", fileUploader.single("soundURL"), (req, res, next) => {
 // Get all sounds
 router.get("/", (req, res, next) => {
   Sound.find({})
-    .populate("creator", "-password -email -_id -__v")
+    .populate("creator", "-password -email _id -__v")
     .populate("tags")
     .then((soundsFromDB) => res.status(200).json(soundsFromDB))
     .catch((err) => next(err));
@@ -68,8 +68,9 @@ router.get("/:soundId", (req, res, next) => {
   const { soundId } = req.params;
 
   Sound.findById(soundId)
-    .populate("creator", "name")
+    .populate("creator", "name _id")
     .then((sound) => {
+      console.log("sound:::::", sound);
       if (!sound) {
         return res.status(404).json({ message: "Sound not found" });
       }
@@ -89,7 +90,6 @@ router.post("/", isAuthenticated, async (req, res, next) => {
       projectId: projectId, // Make sure projectId is properly assigned
     };
 
-    console.log("Creating sound with data:", newSound);
 
     // Create the sound first
     const createdSound = await Sound.create(newSound);
@@ -121,6 +121,16 @@ router.post("/", isAuthenticated, async (req, res, next) => {
       createdSound.tags = tagIds;
       await createdSound.save();
     }
+
+    // Create new project and add sound to it
+    const createdProject = await Project.create({
+      title: createdSound.title + " Project",
+      soundId: [createdSound._id],
+      creator: createdSound.creator._id,
+      masterSoundId: createdSound._id,
+    });
+    createdSound.projectId.push(createdProject._id);
+    await createdSound.save();
 
     // Return populated sound
     const populatedSound = await Sound.findById(createdSound._id)

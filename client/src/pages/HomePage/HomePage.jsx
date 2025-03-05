@@ -27,6 +27,8 @@ function HomePage() {
       });
   }, []);
 
+  console.log("Sounds:", sounds);
+
   return (
     <div className="HomePage">
       <h2>Sounds</h2>
@@ -42,6 +44,7 @@ function HomePage() {
               height={60}
               tags={sound.tags}
               creator={sound.creator}
+              parentProjectId={sound.projectId}
             />
           </div>
         ))

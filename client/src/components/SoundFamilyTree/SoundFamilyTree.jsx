@@ -1,217 +1,205 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom"; // Add this import
 import * as d3 from "d3";
 import "./SoundFamilyTree.css";
-import soundService from "../../services/file-upload.service";
+import { useNavigate } from "react-router-dom"; // Import the navigation hook
 
 const SoundFamilyTree = ({ originalProject, relatedProjects }) => {
   const svgRef = useRef(null);
-  const [masterSound, setMasterSound] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate(); // Use navigate instead of window.location
-
-  // Fetch the original master sound to use as the true root
-  useEffect(() => {
-    if (!originalProject || !originalProject.masterSoundId) return;
-
-    setIsLoading(true);
-    soundService
-      .getSound(originalProject.masterSoundId)
-      .then((sound) => {
-        setMasterSound(sound);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching master sound:", error);
-        setIsLoading(false);
-      });
-  }, [originalProject]);
+  const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
+  const navigate = useNavigate(); // Initialize the navigate function
 
   useEffect(() => {
-    if (isLoading || !masterSound || !originalProject || !relatedProjects)
+    // Return early if no projects to display
+    if (!originalProject || !relatedProjects || relatedProjects.length === 0) {
       return;
+    }
 
-    // Clear previous visualization
-    d3.select(svgRef.current).selectAll("*").remove();
+    function buildHierarchy() {
+      // Start with a map of all projects by ID
+      const projectsMap = new Map();
+      
+      // Add the original project
+      projectsMap.set(originalProject._id, {
+        ...originalProject,
+        children: [],
+        isCurrentProject: true // Mark the current project for highlighting
+      });
 
-    // Prepare data for visualization with master sound as the true root
-    const treeData = {
-      id: masterSound._id,
-      name: masterSound.title,
-      creator: masterSound.creator?.name,
-      type: "sound", // Mark as sound to style differently
-      children: [
-        {
-          id: originalProject._id,
-          name: originalProject.title,
-          creator: originalProject.creator?.name,
-          count: originalProject.soundId?.length || 0,
-          type: "project",
-          children: relatedProjects.map((project) => ({
-            id: project._id,
-            name: project.title,
-            creator: project.creator?.name,
-            count: project.soundId?.length || 0,
-            type: "project",
-          })),
-        },
-      ],
-    };
+      // Add all related projects to the map
+      relatedProjects.forEach(project => {
+        projectsMap.set(project._id, {
+          ...project,
+          children: [],
+          isCurrentProject: false
+        });
+      });
 
-    // Set up dimensions - increase width for better spacing
-    const width = 800;
-    const height = 400;
-    const margin = { top: 40, right: 150, bottom: 40, left: 150 };
+      // Connect projects based on parent-child relationships
+      const allProjects = [originalProject, ...relatedProjects];
+      allProjects.forEach(project => {
+        if (project.parentProjectId && projectsMap.has(project.parentProjectId)) {
+          const parent = projectsMap.get(project.parentProjectId);
+          parent.children.push(projectsMap.get(project._id));
+        }
+      });
+      
+      // Find the root project (the one with no parent)
+      let rootProject = originalProject;
+      for (const project of allProjects) {
+        if (!project.parentProjectId) {
+          rootProject = project;
+          break;
+        }
+      }
+      
+      // If we couldn't find a clear root, use the original project
+      return projectsMap.get(rootProject._id);
+    }
 
-    // Create SVG with container dimensions
-    const svg = d3
-      .select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height);
+    // Build the hierarchical data
+    const hierarchyData = buildHierarchy();
 
-    // Create tree layout - horizontal layout
-    const treeLayout = d3
-      .tree()
-      .size([
-        height - margin.top - margin.bottom,
-        width - margin.left - margin.right,
-      ])
-      .separation((a, b) => (a.parent === b.parent ? 1.5 : 2)); // Increase spacing between nodes
+    // Set up the SVG
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove(); // Clear previous render
 
-    // Convert data to hierarchy
-    const root = d3.hierarchy(treeData);
+    const margin = { top: 40, right: 90, bottom: 50, left: 90 };
+    const width = dimensions.width - margin.left - margin.right;
+    const height = dimensions.height - margin.top - margin.bottom;
 
-    // Position nodes
-    const treeData2 = treeLayout(root);
-    const nodes = treeData2.descendants();
-    const links = treeData2.links();
+    // Create the tree layout
+    const treeLayout = d3.tree().size([width, height]);
+    
+    // Convert the data to a d3 hierarchy
+    const root = d3.hierarchy(hierarchyData);
+    
+    // Assign x,y positions to nodes
+    treeLayout(root);
 
-    // Create container for all elements with the transform
-    const container = svg
+    // Create a group for the tree
+    const g = svg
+      .attr("width", dimensions.width)
+      .attr("height", dimensions.height)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Create links
-    container
-      .selectAll(".link")
-      .data(links)
-      .enter()
-      .append("path")
+    // Add links between nodes
+    g.selectAll(".link")
+      .data(root.links())
+      .join("path")
       .attr("class", "link")
-      .attr("d", (d) => {
-        return `M${d.source.y},${d.source.x}
-                C${(d.source.y + d.target.y) / 2},${d.source.x}
-                 ${(d.source.y + d.target.y) / 2},${d.target.x}
-                 ${d.target.y},${d.target.x}`;
-      });
-
-    // Create node groups
-    const node = container
-      .selectAll(".node")
-      .data(nodes)
-      .enter()
-      .append("g")
-      .attr(
-        "class", 
-        (d) => `node ${d.data.type === "sound" ? "node--sound" : "node--project"}`
-      )
-      .attr("transform", (d) => `translate(${d.y},${d.x})`)
-      .style("cursor", "pointer"); // Add cursor pointer directly
-
-    // Create transparent hit area for better clicking (larger than the visible circle)
-    node
-      .append("circle")
-      .attr("class", "hit-area")
-      .attr("r", 20)
-      .style("fill", "transparent")
-      .on("click", (event, d) => {
-        event.stopPropagation(); // Stop event propagation
-        // Use navigate instead of window.location for smoother transitions
-        if (d.data.type === "sound") {
-          navigate(`/sounds/${d.data.id}`);
-        } else {
-          navigate(`/projects/${d.data.id}`);
-        }
-      });
-
-    // Add visible circles to nodes - now smaller than hit area for easier interaction
-    node
-      .append("circle")
-      .attr("class", "visible-circle")
-      .attr("r", d => d.data.type === "sound" ? 12 : 8)
-      .attr("fill", (d) => {
-        if (d.data.type === "sound") return "#e74c3c"; // Red for sound
-        return d.depth === 1 ? "#f9cb43" : "#fba518"; // Yellow shades for projects
-      })
-      .attr("stroke", "#333")
+      .attr("d", d3.linkHorizontal()
+        .x(d => d.y) // Swap x and y for horizontal layout
+        .y(d => d.x))
+      .attr("fill", "none")
+      .attr("stroke", "#FFB800")
       .attr("stroke-width", 2);
 
-    // Add icons or symbols to distinguish types
-    node
-      .append("text")
-      .attr("class", "node-icon")
-      .attr("dy", ".35em")
-      .attr("text-anchor", "middle")
-      .style("fill", "white")
-      .style("font-size", d => d.data.type === "sound" ? "14px" : "10px")
-      .style("font-weight", "bold")
-      .text(d => d.data.type === "sound" ? "♪" : "P");
-
-    // Add labels
-    node
-      .append("text")
-      .attr("class", "node-label")
-      .attr("dy", ".35em")
-      .attr("x", (d) => (d.children ? -15 : 15))
-      .style("text-anchor", (d) => (d.children ? "end" : "start"))
-      .text((d) => {
-        if (d.data.type === "sound") {
-          return `${d.data.name} (Original)`;
+    // Create node groups
+    const nodes = g
+      .selectAll(".node")
+      .data(root.descendants())
+      .join("g")
+      .attr("class", d => {
+        const classes = [`node ${d.data.isFork ? "fork" : "original"}`];
+        if (d.data._id === originalProject._id) classes.push("current-project");
+        return classes.join(" ");
+      })
+      .attr("transform", d => `translate(${d.y},${d.x})`)
+      .style("cursor", "pointer") // Add pointer cursor to show clickability
+      .on("click", (event, d) => {
+        // Navigate to the clicked project (if it's not the current one)
+        if (d.data._id !== originalProject._id) {
+          navigate(`/projects/${d.data._id}`);
         }
-        return `${d.data.name} (${d.data.count})`;
       });
 
-    // Add creator name below
-    node
+    // Add circles for nodes
+    nodes
+      .append("circle")
+      .attr("r", d => d.data._id === originalProject._id ? 12 : 10)
+      .style("fill", d => {
+        if (d.data._id === originalProject._id) return "#FF5722"; // Highlight current project
+        return d.data.isFork ? "#FFB800" : "#424242";
+      })
+      .style("stroke", d => d.data._id === originalProject._id ? "#FF3D00" : "#333333")
+      .style("stroke-width", d => d.data._id === originalProject._id ? 3 : 2);
+
+    // Add labels for nodes
+    nodes
       .append("text")
-      .attr("class", "node-creator")
-      .attr("dy", "1.75em")
-      .attr("x", (d) => (d.children ? -15 : 15))
-      .style("text-anchor", (d) => (d.children ? "end" : "start"))
-      .style("font-size", "0.8em")
-      .style("opacity", 0.8) // Make creator name slightly less prominent
-      .text((d) => `by ${d.data.creator}`);
+      .attr("dy", ".31em")
+      .attr("x", d => d.children ? -15 : 15)
+      .style("text-anchor", d => d.children ? "end" : "start")
+      .text(d => d.data.title ? 
+        (d.data.title.length > 20 ? d.data.title.substring(0, 17) + "..." : d.data.title) 
+        : "Untitled")
+      .style("font-size", "12px")
+      .style("font-weight", d => d.data._id === originalProject._id ? "bold" : "normal")
+      .style("fill", d => d.data._id === originalProject._id ? "#000" : "#333");
 
-  }, [isLoading, masterSound, originalProject, relatedProjects, navigate]);
+    // Add creator name
+    nodes
+      .append("text")
+      .attr("dy", "1.2em")
+      .attr("x", d => d.children ? -15 : 15)
+      .style("text-anchor", d => d.children ? "end" : "start")
+      .text(d => d.data.creator && d.data.creator.name ? `by ${d.data.creator.name}` : "")
+      .style("font-size", "10px")
+      .style("fill", "#666");
 
- // Show loading state
- if (isLoading) {
-    return (
-      <div className="sound-family-tree">
-        <h3>Sound Family Tree</h3>
-        <div className="loading-message">Loading family tree...</div>
-      </div>
-    );
-  }
+    // Add "You are here" indicator for current project
+    nodes
+      .filter(d => d.data._id === originalProject._id)
+      .append("text")
+      .attr("dy", "2.4em")
+      .attr("x", d => d.children ? -15 : 15)
+      .style("text-anchor", d => d.children ? "end" : "start")
+      .text("You are here")
+      .style("font-size", "9px")
+      .style("fill", "#FF5722")
+      .style("font-weight", "bold");
 
-  // Handle case where master sound couldn't be loaded
-  if (!masterSound && !isLoading) {
-    return (
-      <div className="sound-family-tree">
-        <h3>Sound Family Tree</h3>
-        <div className="error-message">
-          Could not load the original sound information
-        </div>
-      </div>
-    );
-  }
+    // Add tooltip
+    nodes.append("title")
+      .text(d => {
+        const date = new Date(d.data.createdAt).toLocaleDateString();
+        let tooltipText = `${d.data.title}\nCreated: ${date}\n${d.data.isFork ? "Forked project" : "Original project"}`;
+        if (d.data._id === originalProject._id) tooltipText += "\n(Current project)";
+        return tooltipText;
+      });
+
+  }, [originalProject, relatedProjects, dimensions, navigate]); // Add navigate to dependency array
+
+  // Update dimensions on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const container = svgRef.current.parentElement;
+      if (container) {
+        setDimensions({
+          width: container.clientWidth,
+          height: Math.max(500, container.clientWidth * 0.5)
+        });
+      }
+    };
+    
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial sizing
+    
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <div className="sound-family-tree">
-      <h3>Sound Family Tree</h3>
+      <h3>Project Family Tree</h3>
       <div className="tree-container">
         <svg ref={svgRef}></svg>
       </div>
+      {(!originalProject || !relatedProjects || relatedProjects.length === 0) && (
+        <div className="no-data-message">
+          No project family tree data available.
+        </div>
+      )}
     </div>
   );
 };

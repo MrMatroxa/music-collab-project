@@ -1,86 +1,89 @@
 .sound-family-tree {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sound-family-tree h3 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.tree-container {
+  width: 100%;
+  overflow: auto;
+  padding: 10px 0;
+}
+
+svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.node circle {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.node:hover circle {
+  r: 12;
+}
+
+.node.fork circle {
+  fill: #FFB800;
+}
+
+.node.original circle {
+  fill: #424242;
+}
+
+.link {
+  transition: stroke-width 0.3s ease;
+}
+
+.node:hover .link {
+  stroke-width: 3px;
+}
+
+.no-data-message {
+  text-align: center;
+  font-style: italic;
+  color: #666;
+  padding: 20px;
+}
+
+.node.current-project circle {
+  filter: drop-shadow(0 0 4px rgba(255, 87, 34, 0.7));
+}
+
+.node.current-project text {
+  font-weight: bold;
+}
+
+.node {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.node:hover circle {
+  r: 12;
+  filter: brightness(1.2);
+}
+
+.node:hover text {
+  font-weight: bold;
+}
+
+.node.current-project:hover circle {
+  r: 14;
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sound-family-tree {
+    padding: 10px;
   }
-  
-  .sound-family-tree h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    font-size: 1.4rem;
-    color: #333;
-  }
-  
-  .tree-container {
-    overflow-x: auto;
-    margin-top: 1rem;
-    padding-bottom: 1rem;
-    min-height: 400px;
-  }
-  
-  .loading-message, .error-message {
-    text-align: center;
-    padding: 2rem;
-    color: #666;
-  }
-  
-  .error-message {
-    color: #e74c3c;
-  }
-  
-  /* Link styling */
-  .link {
-    fill: none;
-    stroke: #ccc;
-    stroke-width: 2px;
-  }
-  
-  /* Node styling */
-  .node {
-    pointer-events: all;
-  }
-  
-  /* Remove the transform hover effect that causes jumpiness */
-  .node:hover {
-    /* No transform scale */
-  }
-  
-  /* Use highlight colors instead of transforms */
-  .node:hover .visible-circle {
-    stroke: #2980b9;
-    stroke-width: 3px;
-    filter: drop-shadow(0 0 4px rgba(41, 128, 185, 0.4));
-  }
-  
-  .node--sound .visible-circle {
-    filter: drop-shadow(0 0 3px rgba(231, 76, 60, 0.3));
-  }
-  
-  .node--project .visible-circle {
-    filter: drop-shadow(0 0 2px rgba(251, 165, 24, 0.3));
-  }
-  
-  /* Text styling */
-  .node .node-label, .node .node-creator {
-    font-size: 12px;
-    fill: #333;
-    pointer-events: none; /* Prevent text from interfering with clicks */
-  }
-  
-  .node:hover .node-label {
-    font-weight: bold;
-    fill: #2980b9;
-  }
-  
-  .node:hover .node-creator {
-    fill: #3498db;
-  }
-  
-  /* Hit area is transparent but handles clicks */
-  .hit-area {
-    cursor: pointer;
-    fill-opacity: 0;
-    stroke: none;
-  }
+}
