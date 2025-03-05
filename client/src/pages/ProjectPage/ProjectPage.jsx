@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "./ProjectPage.css";
 import Loading from "../../components/Loading/Loading";
@@ -6,7 +6,7 @@ import projectService from "../../services/project.service";
 import MultitrackPlayer from "../../components/common/MultitrackPlayer";
 import AddSoundModal from "../../components/common/AddSoundModal";
 import { Button } from "@mui/material";
-import { FaPlus } from "react-icons/fa";
+import { FaCodeBranch, FaPlus } from "react-icons/fa";
 import SoundFamilyTree from "../../components/SoundFamilyTree/SoundFamilyTree";
 
 function ProjectPage() {
@@ -16,6 +16,31 @@ function ProjectPage() {
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [relatedProjects, setRelatedProjects] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
+
+  // Get current user from token
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      try {
+        const userPayload = JSON.parse(atob(token.split(".")[1]));
+        setCurrentUser(userPayload);
+      } catch (error) {
+        console.error("Error parsing auth token:", error);
+      }
+    }
+  }, []);
+
+  const isCreatorOrMember = () => {
+    if (!currentUser || !project) return false;
+    
+    const isCreator = project.creator?._id === currentUser._id;
+    const isMember = project.members?.some(member => member._id === currentUser._id);
+    
+    return isCreator || isMember;
+  };
+
 
   // Keep this as a backup simple fetch function
   const fetchProject = async () => {
@@ -30,7 +55,6 @@ function ProjectPage() {
     }
   };
 
-  // Move this function outside the useEffect
   const fetchProjectFamily = async () => {
     setIsLoading(true);
     try {
@@ -88,6 +112,55 @@ function ProjectPage() {
     fetchProjectFamily();
   };
 
+  const handleCollabClick = async () => {
+    try {
+      if (!currentUser) {
+        // Redirect to login if no user is logged in
+        navigate('/login');
+        return;
+      }
+      
+      // Create a set of member IDs to avoid duplicates
+      const memberIds = new Set();
+      
+      // Add all existing members from the parent project
+      if (project.members && project.members.length > 0) {
+        project.members.forEach(member => memberIds.add(member._id));
+      }
+      
+      // Add the original creator if they're not the current user
+      if (project.creator && project.creator._id !== currentUser._id) {
+        memberIds.add(project.creator._id);
+      }
+      
+      // Create the related project
+      const newProject = await projectService.createRelatedProject({
+        title: `My version of ${project.title}`,
+        soundId: project.soundId, // Copy sounds from original project
+        masterSoundId: project.masterSoundId || project.soundId?.[0]?._id, // Track the original sound
+        creator: currentUser._id,
+        isFork: true,
+        parentProjectId: projectId, // Track the original project
+        // Include all previous members plus the original creator
+        members: Array.from(memberIds),
+      });
+      
+      // Update the parent project with the child project reference
+      try {
+        await projectService.updateProject(projectId, {
+          childProjectId: newProject._id
+        });
+        console.log("Parent project updated with child reference");
+      } catch (updateError) {
+        console.error("Error updating parent project:", updateError);
+      }
+      
+      navigate(`/projects/${newProject._id}`);
+    } catch (error) {
+      console.error("Error creating project:", error);
+    }
+  };
+
   if (isLoading)
     return (
       <div>
@@ -120,16 +193,39 @@ function ProjectPage() {
             </ul>
           </div>
         )}
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<FaPlus />}
-          onClick={handleAddSound}
-          className="add-sound-button"
-          sx={{ marginTop: 2 }}
-        >
-          Add Sound ({inheritedBpm} BPM)
-        </Button>
+          <div className="project-actions">
+          {isCreatorOrMember() && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<FaPlus />}
+              onClick={handleAddSound}
+              className="add-sound-button"
+              sx={{ marginTop: 2, marginRight: 2 }}
+            >
+              Add Sound ({inheritedBpm} BPM)
+            </Button>
+          )}
+          
+          {currentUser && currentUser._id !== project.creator?._id && (
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<FaCodeBranch />}
+              onClick={handleCollabClick}
+              className="collab-button"
+              sx={{ 
+                marginTop: 2,
+                backgroundColor: "#FFB800",
+                "&:hover": {
+                  backgroundColor: "#FFA000",
+                },
+              }}
+            >
+              Collab
+            </Button>
+          )}
+        </div>
       </div>
       <div className="player-section">
         <MultitrackPlayer soundTracks={project.soundId} />
