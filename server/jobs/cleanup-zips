@@ -1,0 +1,33 @@
+const cron = require('node-cron');
+const cloudinary = require('../config/cloudinary.config').v2;
+
+// Run daily at midnight
+cron.schedule('0 0 * * *', async () => {
+  try {
+    console.log('Running ZIP cleanup job');
+    
+    // Get timestamp for 24 hours ago
+    const oneDayAgo = Math.floor(Date.now()/1000) - 86400;
+    
+    // Find all resources with our project download tags
+    const result = await cloudinary.search
+      .expression('resource_type:raw AND tags:project_*')
+      .sort_by('created_at', 'desc')
+      .max_results(500)
+      .execute();
+    
+    // Filter for resources older than 24 hours
+    const toDelete = result.resources
+      .filter(resource => resource.created_at < oneDayAgo)
+      .map(resource => resource.public_id);
+    
+    if (toDelete.length > 0) {
+      console.log(`Deleting ${toDelete.length} old ZIP files`);
+      await cloudinary.api.delete_resources(toDelete, { resource_type: 'raw' });
+    }
+    
+    console.log('ZIP cleanup completed');
+  } catch (error) {
+    console.error('Error in ZIP cleanup job:', error);
+  }
+});

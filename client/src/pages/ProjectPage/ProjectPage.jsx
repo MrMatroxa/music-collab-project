@@ -17,6 +17,7 @@ function ProjectPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [relatedProjects, setRelatedProjects] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isCreatorOrMember, setIsCreatorOrMember] = useState(false);
   const navigate = useNavigate();
 
   // Get current user from token
@@ -32,35 +33,32 @@ function ProjectPage() {
     }
   }, []);
 
-  const isCreatorOrMember = () => {
-    if (!currentUser || !project) return false;
-
-    // Check if the user is the creator
-    const isCreator = project.creator?._id === currentUser._id;
-
-    // Check if the user is a member (handling both object and string IDs)
-    const isMember = project.members?.some((member) => {
-      // Handle when member is an object with _id property
-      if (typeof member === "object" && member?._id) {
-        return member._id === currentUser._id;
-      }
-      // Handle when member is just an ID string
-      return member === currentUser._id;
-    });
-
-    return isCreator || isMember;
-  };
-
-  // Keep this as a backup simple fetch function
-  const fetchProject = async () => {
+  const checkIsCreatorOrMember = async () => {
     try {
-      const data = await projectService.getProject(projectId);
-      setProject(data);
+      const projectData = await projectService.getProject(projectId);
+      setProject(projectData);
+
+      if (!currentUser || !projectData) return false;
+
+      // Check if the user is the creator
+      const isCreator = projectData.creator?._id === currentUser._id;
+      console.log("project:", projectData);
+      console.log("project.creator?._id:", projectData.creator?._id);
+
+      // Check if the user is a member (handling both object and string IDs)
+      const isMember = projectData.members?.some((member) => {
+        // Handle when member is an object with _id property
+        if (typeof member === "object" && member?._id) {
+          return member._id === currentUser._id;
+        }
+        // Handle when member is just an ID string
+        return member === currentUser._id;
+      });
+
+      setIsCreatorOrMember(isCreator || isMember);
     } catch (error) {
-      console.error("Error fetching project:", error);
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
+      console.error("Error checking if user is creator or member:", error);
+      setIsCreatorOrMember(false);
     }
   };
 
@@ -107,6 +105,10 @@ function ProjectPage() {
   useEffect(() => {
     fetchProjectFamily();
   }, [projectId]);
+
+  useEffect(() => {
+    checkIsCreatorOrMember();
+  }, [projectId, currentUser]);
 
   const handleAddSound = () => {
     setModalOpen(true);
@@ -218,7 +220,7 @@ function ProjectPage() {
           </div>
         )}
         <div className="project-actions">
-          {isCreatorOrMember() && (
+          {isCreatorOrMember && (
             <Button
               variant="contained"
               color="primary"
@@ -231,7 +233,7 @@ function ProjectPage() {
             </Button>
           )}
 
-          {currentUser && currentUser._id !== project.creator?._id && (
+          
             <Button
               variant="contained"
               color="secondary"
@@ -248,7 +250,7 @@ function ProjectPage() {
             >
               Collab
             </Button>
-          )}
+          
           <Button
             variant="contained"
             onClick={handleDownloadAll}

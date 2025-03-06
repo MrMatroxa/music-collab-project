@@ -3,7 +3,7 @@ const router = express.Router();
 
 const Project = require("../models/Project.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware.js");
-const archiver = require('archiver');
+const archiver = require("archiver");
 // Get all projects
 router.get("/", (req, res, next) => {
   Project.find()
@@ -29,14 +29,14 @@ router.get("/:projectId", (req, res, next) => {
         {
           path: "creator",
           model: "User",
-          select: "-password -email -__v -_id",
+          select: "-password -email -__v",
         },
       ],
     })
     .populate({
       path: "creator",
       model: "User",
-      select: "-password -email -__v -_id",
+      select: "-password -email -__v",
     })
     .populate("members", "name")
 
@@ -110,7 +110,7 @@ router.post("/related", isAuthenticated, (req, res, next) => {
   // Ensure creator is explicitly set - using the one from the request body
   const newProject = {
     ...req.body,
-    creator: req.body.creator // Keep the creator from the request (original project's creator)
+    creator: req.body.creator, // Keep the creator from the request (original project's creator)
   };
 
   // Add the current user as a member if they're not already in the members list
@@ -240,37 +240,77 @@ router.get("/search/:query", (req, res, next) => {
 router.get("/download-project/:projectId", async (req, res) => {
   try {
     const { projectId } = req.params;
-    
-    // Find the project and populate sound data
-    const project = await Project.findById(projectId).populate('soundId');
-    
+    const cloudinary = require("../config/cloudinary.config").v2;
+
+    // Log to verify we have the correct object
+    console.log("Cloudinary object:", !!cloudinary, !!cloudinary.uploader);
+
+    // Rest of your code remains the same
+    const project = await Project.findById(projectId).populate("soundId");
+
     if (!project || !project.soundId || project.soundId.length === 0) {
-      return res.status(404).json({ message: "No sounds found in this project" });
+      return res
+        .status(404)
+        .json({ message: "No sounds found in this project" });
     }
-    
-    // Set up the ZIP file
-    res.setHeader('Content-Disposition', `attachment; filename="${project.title || 'project'}_sounds.zip"`);
-    res.setHeader('Content-Type', 'application/zip');
-    
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    archive.pipe(res);
-    
-    // Download each sound and add to ZIP
-    const downloadPromises = project.soundId.map(async (sound) => {
-      try {
-        const response = await fetch(sound.soundURL);
-        const buffer = await response.buffer();
-        const filename = `${sound.title || 'sound'}.mp3`;
-        
-        archive.append(buffer, { name: filename });
-      } catch (error) {
-        console.error(`Error downloading sound ${sound._id}:`, error);
-      }
+
+    // Create a unique tag for this download
+    const downloadTag = `project_${projectId}_${Date.now()}`;
+
+    // Extract public_ids from the Cloudinary URLs
+    const public_ids = project.soundId
+      .filter((sound) => sound && sound.soundURL)
+      .map((sound) => {
+        try {
+          
+          const url = new URL(sound.soundURL);
+          const pathParts = url.pathname.split("/");
+
+          // Find the position after 'upload' in the path
+          const uploadIndex = pathParts.indexOf("upload");
+          if (uploadIndex === -1) return null;
+
+          // Get everything after 'upload', excluding version number (v1234567890)
+          const version = pathParts[uploadIndex + 1];
+          if (version.startsWith("v")) {
+            // Join all parts after version and before file extension
+            const fullPublicId = pathParts.slice(uploadIndex + 2).join("/");
+            return fullPublicId.split(".")[0]; // Remove file extension
+          } else {
+            // If no version in URL, just take everything after upload
+            const fullPublicId = pathParts.slice(uploadIndex + 1).join("/");
+            return fullPublicId.split(".")[0]; // Remove file extension
+          }
+        } catch (err) {
+          console.error(
+            `Error extracting public_id from URL: ${sound.soundURL}`,
+            err
+          );
+          return null;
+        }
+      })
+      .filter((id) => id !== null);
+
+    console.log("Extracted public_ids:", public_ids);
+
+    if (public_ids.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Could not extract valid sound IDs" });
+    }
+
+    // Create the ZIP file using Cloudinary
+    const result = await cloudinary.uploader.create_zip({
+      public_ids: public_ids,
+      resource_type: "video",
+      tags: downloadTag,
+      expires_at: Math.floor(Date.now() / 1000) + 86400,
     });
-    
-    await Promise.all(downloadPromises);
-    await archive.finalize();
-    
+
+    console.log("Cloudinary ZIP created:", result);
+
+    // Make sure to return the response
+    return res.redirect(result.url);
   } catch (error) {
     console.error("Error creating ZIP file:", error);
     res.status(500).json({ message: "Server error while creating ZIP file" });
