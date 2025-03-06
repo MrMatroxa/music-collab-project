@@ -34,6 +34,7 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(initialVolume);
+  const [volumeBeforeMute, setVolumeBeforeMute] = useState(initialVolume);
   const [muted, setMuted] = useState(false);
   const [trackVolumes, setTrackVolumes] = useState({});
   const [trackDurations, setTrackDurations] = useState([]);
@@ -45,11 +46,11 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
     // Clean up any previous references
     wavesurferRefs.current = [];
     setTrackDurations([]);
-    
+
     // For each sound track, create a hidden container and wavesurfer instance
     soundTracks.forEach((sound, index) => {
-      const hiddenContainerRef = document.createElement('div');
-      hiddenContainerRef.style.display = 'none';
+      const hiddenContainerRef = document.createElement("div");
+      hiddenContainerRef.style.display = "none";
       document.body.appendChild(hiddenContainerRef);
 
       const options = {
@@ -66,24 +67,29 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
       };
 
       // Create the wavesurfer instance
-      import('wavesurfer.js').then(WaveSurfer => {
+      import("wavesurfer.js").then((WaveSurfer) => {
         const wavesurfer = WaveSurfer.default.create(options);
-        
-        wavesurfer.on('ready', () => {
+
+        wavesurfer.on("ready", () => {
           const trackDuration = wavesurfer.getDuration();
           console.log(`Track ${sound._id} duration: ${trackDuration}`);
-          
-          setTrackDurations(prev => {
+
+          setTrackDurations((prev) => {
             const newDurations = [...prev];
             newDurations[index] = trackDuration;
-            
+
             // Once all tracks have reported durations, set the max duration
-            if (newDurations.filter(d => d !== undefined).length === soundTracks.length) {
-              const maxDuration = Math.max(...newDurations.filter(d => !isNaN(d) && d !== undefined));
+            if (
+              newDurations.filter((d) => d !== undefined).length ===
+              soundTracks.length
+            ) {
+              const maxDuration = Math.max(
+                ...newDurations.filter((d) => !isNaN(d) && d !== undefined)
+              );
               console.log("Setting max duration to:", maxDuration);
               setDuration(maxDuration);
             }
-            
+
             return newDurations;
           });
         });
@@ -166,7 +172,7 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
 
     multitrack.once("canplay", async () => {
       setIsReady(true);
-      
+
       try {
         await multitrack.setSinkId("default");
       } catch (error) {
@@ -231,21 +237,33 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
     const newVolume = newValue / 100; // Convert from slider's 0-100 to volume's 0-1
     setVolume(newVolume);
     if (multitrackRef.current) {
-      multitrackRef.current.setMasterVolume(newVolume);
+      multitrackRef.current.setTrackVolume(0, newVolume);
       setMuted(newVolume === 0);
     }
   }, []);
 
   const toggleMute = useCallback(() => {
-    if (multitrackRef.current) {
-      if (muted) {
-        multitrackRef.current.setMasterVolume(volume || 0.7);
-      } else {
-        multitrackRef.current.setMasterVolume(0);
-      }
-      setMuted(!muted);
+    // if (multitrackRef.current) {
+    //   if (muted) {
+    //     multitrackRef.current.setMasterVolume(volume || 0.7);
+    //   } else {
+    //     multitrackRef.current.setMasterVolume(0);
+    //     setVolume(0);
+    //   }
+
+    // }
+    // setMuted(!muted);
+    console.log(multitrackRef);
+    if (!muted) {
+      setVolumeBeforeMute(volume);
+      setVolume(0);
+      // multitrackRef.current.setMasterVolume(0);
+    } else {
+      setVolume(volumeBeforeMute);
+      // multitrackRef.current.setMasterVolume(volumeBeforeMute);
     }
-  }, [muted, volume]);
+    setMuted(!muted);
+  }, [muted, volume, volumeBeforeMute]);
 
   const handleZoomChange = useCallback((event, newValue) => {
     setZoom(newValue);

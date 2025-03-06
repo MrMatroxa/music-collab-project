@@ -31,6 +31,7 @@ const AudioPlayer = ({
   className = "",
   tags = [],
   creator,
+  parentProjectId,
 }) => {
   const containerRef = useRef(null);
   const [duration, setDuration] = useState(null);
@@ -55,14 +56,50 @@ const AudioPlayer = ({
     backgroundColor: "#424242",
   });
 
-  // Function to handle project creation and navigation
+  const token = localStorage.getItem("authToken");
+  const userPayload = token ? JSON.parse(atob(token.split(".")[1])) : null;
+  const currentUserId = userPayload ? userPayload._id : null;
+
+  // Modified handleCollabClick function in AudioPlayer.jsx
   const handleCollabClick = async () => {
     try {
-      const newProject = await projectService.createProject({
-        title: `Collab Project for ${title}`,
+      // Get the current user's ID from localStorage token
+      // const token = localStorage.getItem("authToken");
+      // const userPayload = JSON.parse(atob(token.split(".")[1]));
+      
+      // const currentUserId = userPayload._id;
+      // console.log("creator:", creator);
+      
+      // Create a set of member IDs to avoid duplicates
+      const memberIds = new Set();
+      
+      // Add current user as a member
+      memberIds.add(currentUserId);
+      
+      // Create the related project first - keeping the original creator
+      const newProject = await projectService.createRelatedProject({
+        title: `My version of ${title}`,
         soundId: [soundId],
-        creator: creator._id,
+        masterSoundId: soundId, // Track the original sound
+        creator: creator._id, // Keep original creator
+        isFork: true, // Flag as fork
+        parentProjectId: parentProjectId, // Track the original project
+        members: Array.from(memberIds) // Include current user in members
       });
+      
+      // Now update the parent project with the child project reference
+      if (parentProjectId) {
+        try {
+          await projectService.updateProject(parentProjectId, {
+            childProjectId: newProject._id
+          });
+          console.log("Parent project updated with child reference");
+        } catch (updateError) {
+          console.error("Error updating parent project:", updateError);
+          // Continue even if this fails - the fork is still created
+        }
+      }
+      
       navigate(`/projects/${newProject._id}`);
     } catch (error) {
       console.error("Error creating project:", error);
@@ -191,16 +228,17 @@ const AudioPlayer = ({
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
     >
-   
-     
       <div className="waveform-container">
         <div ref={containerRef} id={`waveform-${soundId}`} />
       </div>
-      
 
       <div className="audio-controls">
         <div className="audio-info">
-          {title && <h4 className="track-title">{title}</h4>}
+        {title && (
+            <Link to={`/projects/${parentProjectId}`} className="track-title">
+              <h4>{title}</h4>
+            </Link>
+          )}
           <div className="time-display">
             <span className="current-time">{formatTime(currentTime)}</span>
             <span className="duration"> / {formatTime(duration)}</span>
@@ -213,7 +251,7 @@ const AudioPlayer = ({
               onClick={onPlayPause}
               className="play-pause-btn"
               aria-label={isPlaying ? "Pause" : "Play"}
-              >
+            >
               {isPlaying ? <FaPause /> : <FaPlay />}
             </button>
             <button onClick={onStop} className="stop-btn" aria-label="Stop">
@@ -224,7 +262,7 @@ const AudioPlayer = ({
                 onClick={toggleMute}
                 className="mute-btn"
                 aria-label={muted ? "Unmute" : "Mute"}
-                >
+              >
                 {muted ? <FaVolumeMute /> : <FaVolumeUp />}
               </button>
             </div>
@@ -254,13 +292,14 @@ const AudioPlayer = ({
                   color: "rgb(251, 165, 24)",
                 }),
               })}
-              />
+            />
           </div>
         </div>
       </div>
       <div className="tags-container flex flex-wrap gap-2">
-              {creator && <div className="creator-info">Created by: {creator.name}</div>} 
-        {console.log("Rendering tags for", title, ":", tags)}
+        {creator && (
+          <div className="creator-info">Created by: {creator.name}</div>
+        )}
         {tags &&
           tags.length > 0 &&
           tags.map((tag) => (
@@ -273,7 +312,11 @@ const AudioPlayer = ({
             </Link>
           ))}
       </div>
-      <button className="collab" onClick={handleCollabClick}>Collab</button>
+      {currentUserId !== creator._id && (
+        <button className="collab" onClick={handleCollabClick}>
+          Collab
+        </button>
+      )}
     </div>
   );
 };

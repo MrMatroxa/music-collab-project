@@ -24,7 +24,6 @@ const soundSchema = new Schema(
       {
         type: Schema.Types.ObjectId,
         ref: "Project",
-        required: true,
       },
     ],
     creator: {
@@ -38,6 +37,11 @@ const soundSchema = new Schema(
         ref: "Tag",
       },
     ],
+    // Add this new field:
+    isMasterSound: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

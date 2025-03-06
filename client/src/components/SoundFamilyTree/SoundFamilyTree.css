@@ -1,0 +1,118 @@
+.sound-family-tree {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 0, 0, 0.2);
+  color: #e0e0e0;
+}
+
+.sound-family-tree h3 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: #f0f0f0;
+  text-align: center;
+}
+
+.tree-container {
+  width: 100%;
+  overflow: auto;
+  padding: 10px 0;
+  background-color: #252525;
+  border-radius: 6px;
+}
+
+.sound-family-tree svg {
+  display: block;
+  margin: 0 auto;
+  background-color: #252525;
+}
+
+.node circle {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  stroke: #121212;
+}
+
+.node:hover circle {
+  r: 12;
+}
+
+.node.fork circle {
+  fill: #FFB800;
+}
+
+.node.original circle {
+  fill: #7e7e7e;
+}
+
+/* Root/Parent node styling - add after .node.original circle */
+.node:first-child circle {
+  fill: #00E5FF !important; /* Bright cyan color */
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.6));
+}
+
+.node:first-child:hover circle {
+  fill: #29FFFF !important; /* Even brighter on hover */
+}
+
+/* Ensure parent node text is clearly visible */
+.node:first-child text {
+  fill: #FFFFFF !important;
+  font-weight: bold;
+}
+
+.link {
+  transition: stroke-width 0.3s ease;
+  stroke: #FFB800;
+}
+
+.node:hover .link {
+  stroke-width: 3px;
+}
+
+.no-data-message {
+  text-align: center;
+  font-style: italic;
+  color: #a0a0a0;
+  padding: 20px;
+}
+
+.node.current-project circle {
+  filter: drop-shadow(0 0 6px rgba(255, 87, 34, 0.8));
+}
+
+.node.current-project text {
+  font-weight: bold;
+  fill: #f0f0f0 !important;
+}
+
+.node text {
+  fill: #d0d0d0 !important;
+}
+
+.node {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.node:hover circle {
+  r: 12;
+  filter: brightness(1.3);
+}
+
+.node:hover text {
+  font-weight: bold;
+  fill: #ffffff !important;
+}
+
+.node.current-project:hover circle {
+  r: 14;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sound-family-tree {
+    padding: 10px;
+  }
+}

@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import service from "../../services/file-upload.service";
-import projectService from "../../services/project.service";
 import { 
   TextField, Button, Typography, Box, Paper, 
-  Container, IconButton, InputAdornment 
+  Container, InputAdornment 
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
@@ -34,8 +33,10 @@ function AddSound() {
       const uploadedFile = await service.uploadSound(formData, token);
       setSoundURL(uploadedFile.fileUrl);
 
-      const tagsArray = tags.split(",").map((tag) => tag.trim().toLowerCase());
+      let tagsArray = tags.split(",").map((tag) => tag.trim().toLowerCase());
       tagsArray.push(`${bpm} BPM`);
+
+      tagsArray = tagsArray.filter(tag => tag.length > 0);
 
       const newSound = {
         title,
@@ -43,17 +44,18 @@ function AddSound() {
         description,
         soundURL: uploadedFile.fileUrl,
         tags: tagsArray,
+        isMasterSound: true,
       };
 
-      const createdSound = await service.createSound(newSound, token);
+      await service.createSound(newSound, token);
 
-      const newProject = {
-        title: `Project for ${title}`,
-        description: `Project containing the sound ${title}`,
-        soundId: [createdSound._id],
-      };
+      // const newProject = {
+      //   title: `Project for ${title}`,
+      //   description: `Project containing the sound ${title}`,
+      //   soundId: [createdSound._id],
+      // };
 
-      await projectService.createProject(newProject);
+      // await projectService.createProject(newProject);
 
       setTitle("");
       setBpm("");

@@ -40,3 +40,21 @@
     background-color: rgba(211, 47, 47, 0.1);
     border-radius: 4px;
   }
+
+  .project-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  
+  .collab-button {
+    background-color: #FFB800 !important;
+    color: #000 !important;
+    transition: all 0.3s ease;
+  }
+  
+  .collab-button:hover {
+    background-color: #FFA000 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }

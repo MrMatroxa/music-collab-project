@@ -25,7 +25,7 @@ router.post("/upload", fileUploader.single("soundURL"), (req, res, next) => {
 // Get all sounds
 router.get("/", (req, res, next) => {
   Sound.find({})
-    .populate("creator", "-password -email -_id -__v")
+    .populate("creator", "-password -email _id -__v")
     .populate("tags")
     .then((soundsFromDB) => res.status(200).json(soundsFromDB))
     .catch((err) => next(err));
@@ -56,7 +56,7 @@ router.get("/search", (req, res, next) => {
       { tags: { $regex: query, $options: "i" } },
     ],
   })
-    .populate("creator", "username email")
+    .populate("creator", "name")
     .then((sounds) => {
       res.status(200).json(sounds);
     })
@@ -68,8 +68,9 @@ router.get("/:soundId", (req, res, next) => {
   const { soundId } = req.params;
 
   Sound.findById(soundId)
-    .populate("creator", "username email")
+    .populate("creator", "name _id")
     .then((sound) => {
+      console.log("sound:::::", sound);
       if (!sound) {
         return res.status(404).json({ message: "Sound not found" });
       }
@@ -82,18 +83,18 @@ router.get("/:soundId", (req, res, next) => {
 router.post("/", isAuthenticated, async (req, res, next) => {
   try {
     // Add the current user as the creator
-    const { tags = [], ...rest } = req.body;
+    const { tags = [], projectId = [], ...rest } = req.body;
     const newSound = {
       ...rest,
       creator: req.payload._id,
+      projectId: projectId, // Make sure projectId is properly assigned
     };
-    
-    console.log("Creating sound with data:", newSound);
-    
+
+
     // Create the sound first
     const createdSound = await Sound.create(newSound);
     console.log("Sound created with ID:", createdSound._id);
-    
+
     // Process tags if any
     if (tags && tags.length > 0) {
       const tagPromises = tags.map(async (tagName) => {
@@ -101,7 +102,7 @@ router.post("/", isAuthenticated, async (req, res, next) => {
         if (!tag) {
           tag = await Tag.create({
             name: tagName.toLowerCase(),
-            sound: [createdSound._id]
+            sound: [createdSound._id],
           });
         } else {
           // Add this sound to existing tag
@@ -112,23 +113,33 @@ router.post("/", isAuthenticated, async (req, res, next) => {
         }
         return tag._id;
       });
-      
+
       // Resolve all tag promises
       const tagIds = await Promise.all(tagPromises);
-      
+
       // Add tags to sound
       createdSound.tags = tagIds;
       await createdSound.save();
     }
-    
+
+    // Create new project and add sound to it
+    const createdProject = await Project.create({
+      title: createdSound.title + " Project",
+      soundId: [createdSound._id],
+      creator: createdSound.creator._id,
+      masterSoundId: createdSound._id,
+    });
+    createdSound.projectId.push(createdProject._id);
+    await createdSound.save();
+
     // Return populated sound
     const populatedSound = await Sound.findById(createdSound._id)
       .populate("creator", "name")
-      .populate("tags");
-      
+      .populate("tags")
+      .populate("projectId");
+
     console.log("Sending populated sound:", populatedSound);
     res.status(201).json(populatedSound);
-    
   } catch (err) {
     console.error("Error creating sound:", err);
     next(err);
@@ -222,6 +233,7 @@ router.get("/user/:userId", (req, res, next) => {
 
   Sound.find({ creator: userId })
     .populate("creator", "name")
+    .populate("tags")
     .then((sounds) => {
       res.status(200).json(sounds);
     })

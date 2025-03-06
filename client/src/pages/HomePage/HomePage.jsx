@@ -12,8 +12,13 @@ function HomePage() {
     service
       .getSounds()
       .then((data) => {
-        console.log("dataaaa:::::", data);
-        setSounds(data);
+        console.log("All sounds data:", data);
+        
+        // Filter to only show master sounds
+        const masterSounds = data.filter(sound => sound.isMasterSound);
+        
+        console.log("Master sounds:", masterSounds);
+        setSounds(masterSounds);
         setIsLoading(false);
       })
       .catch((err) => {
@@ -22,13 +27,14 @@ function HomePage() {
       });
   }, []);
 
+  console.log("Sounds:", sounds);
+
   return (
     <div className="HomePage">
       <h2>Sounds</h2>
       {isLoading ? (
         <Loading />
-      ) : (
-        sounds &&
+      ) : sounds && sounds.length > 0 ? (
         sounds.map((sound) => (
           <div key={sound._id} className="sound-item">
             <AudioPlayer
@@ -38,9 +44,12 @@ function HomePage() {
               height={60}
               tags={sound.tags}
               creator={sound.creator}
+              parentProjectId={sound.projectId}
             />
           </div>
         ))
+      ) : (
+        <p>No sounds available</p>
       )}
     </div>
   );
