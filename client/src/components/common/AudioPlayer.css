@@ -32,10 +32,20 @@
     align-items: end;
   }
   
-  .track-title {
+  .track-title,
+  .track-title h4,
+  h4.track-title {
     margin: 0;
     font-weight: 600;
-    margin-right: 1em
+    margin-right: 1em;
+    color: rgb(251, 165, 24) !important; /* Original color */
+    text-decoration: none !important; /* Remove underline */
+  }
+  
+  .track-title:hover,
+  .track-title h4:hover,
+  h4.track-title:hover {
+    color: rgb(249, 203, 67) !important; /* Hover color */
   }
   
   .time-display {

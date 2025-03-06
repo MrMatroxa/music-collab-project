@@ -18,10 +18,21 @@ const createProject = (projectData) => {
 };
 
 const createRelatedProject = (projectData) => {
+  const token = getAuthToken();
+  // Extract user ID from token - this ensures we always have a creator value
+  const tokenPayload = token ? JSON.parse(atob(token.split(".")[1])) : null;
+  const currentUserId = tokenPayload ? tokenPayload._id : null;
+
+  // Ensure creator exists by using the provided one or falling back to current user
+  const dataWithCreator = {
+    ...projectData,
+    creator: projectData.creator || currentUserId
+  };
+
   return axios
-    .post(`${API_URL}/related`, projectData, {
+    .post(`${API_URL}/related`, dataWithCreator, {
       headers: {
-        Authorization: `Bearer ${getAuthToken()}`,
+        Authorization: `Bearer ${token}`,
       },
     })
     .then((response) => response.data);
@@ -106,6 +117,11 @@ const getRelatedProjects = (masterSoundId) => {
     .then((response) => response.data);
 };
 
+const downloadProjectSounds = (projectId) => {
+  // Return the URL instead of making the request directly
+  return `${API_URL}/download-project/${projectId}`;
+};
+
 const projectService = {
   createProject,
   getAllProjects,
@@ -116,6 +132,7 @@ const projectService = {
   getAllProjectsByUser,
   getRelatedProjects,
   createRelatedProject,
+  downloadProjectSounds,
 };
 
 export default projectService;

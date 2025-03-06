@@ -34,13 +34,22 @@ function ProjectPage() {
 
   const isCreatorOrMember = () => {
     if (!currentUser || !project) return false;
-    
+
+    // Check if the user is the creator
     const isCreator = project.creator?._id === currentUser._id;
-    const isMember = project.members?.some(member => member._id === currentUser._id);
-    
+
+    // Check if the user is a member (handling both object and string IDs)
+    const isMember = project.members?.some((member) => {
+      // Handle when member is an object with _id property
+      if (typeof member === "object" && member?._id) {
+        return member._id === currentUser._id;
+      }
+      // Handle when member is just an ID string
+      return member === currentUser._id;
+    });
+
     return isCreator || isMember;
   };
-
 
   // Keep this as a backup simple fetch function
   const fetchProject = async () => {
@@ -116,45 +125,55 @@ function ProjectPage() {
     try {
       if (!currentUser) {
         // Redirect to login if no user is logged in
-        navigate('/login');
+        navigate("/login");
         return;
       }
-      
+
+      // Extract sound IDs from the sound objects
+      const soundIds = project.soundId?.map((sound) => sound._id) || [];
+
+      // Get the original creator from the project
+      const originalCreator = project.creator?._id;
+
       // Create a set of member IDs to avoid duplicates
       const memberIds = new Set();
-      
-      // Add all existing members from the parent project
+
+      // Add current user as a member
+      memberIds.add(currentUser._id);
+
+      // Add existing members if any
       if (project.members && project.members.length > 0) {
-        project.members.forEach(member => memberIds.add(member._id));
+        project.members.forEach((member) => {
+          if (typeof member === "object" && member?._id) {
+            memberIds.add(member._id);
+          } else {
+            memberIds.add(member);
+          }
+        });
       }
-      
-      // Add the original creator if they're not the current user
-      if (project.creator && project.creator._id !== currentUser._id) {
-        memberIds.add(project.creator._id);
-      }
-      
-      // Create the related project
+
+      // Create the related project - keeping the original creator
       const newProject = await projectService.createRelatedProject({
         title: `My version of ${project.title}`,
-        soundId: project.soundId, // Copy sounds from original project
-        masterSoundId: project.masterSoundId || project.soundId?.[0]?._id, // Track the original sound
-        creator: currentUser._id,
+        description: `Collaboration on ${project.title}`,
+        soundId: soundIds,
+        masterSoundId: project.masterSoundId || project.soundId?.[0]?._id,
+        creator: originalCreator, // Keep original creator
         isFork: true,
-        parentProjectId: projectId, // Track the original project
-        // Include all previous members plus the original creator
-        members: Array.from(memberIds),
+        parentProjectId: projectId,
+        members: Array.from(memberIds), // Include current user in members
       });
-      
+
       // Update the parent project with the child project reference
       try {
         await projectService.updateProject(projectId, {
-          childProjectId: newProject._id
+          childProjectId: newProject._id,
         });
         console.log("Parent project updated with child reference");
       } catch (updateError) {
         console.error("Error updating parent project:", updateError);
       }
-      
+
       navigate(`/projects/${newProject._id}`);
     } catch (error) {
       console.error("Error creating project:", error);
@@ -172,6 +191,11 @@ function ProjectPage() {
 
   // Get the BPM from the first sound (if it exists)
   const inheritedBpm = project.soundId?.[0]?.bpm || 120;
+
+  const handleDownloadAll = () => {
+    // Open the download URL in a new tab/window
+    window.open(projectService.downloadProjectSounds(projectId));
+  };
 
   return (
     <div className="project-page">
@@ -193,7 +217,7 @@ function ProjectPage() {
             </ul>
           </div>
         )}
-          <div className="project-actions">
+        <div className="project-actions">
           {isCreatorOrMember() && (
             <Button
               variant="contained"
@@ -206,7 +230,7 @@ function ProjectPage() {
               Add Sound ({inheritedBpm} BPM)
             </Button>
           )}
-          
+
           {currentUser && currentUser._id !== project.creator?._id && (
             <Button
               variant="contained"
@@ -214,7 +238,7 @@ function ProjectPage() {
               startIcon={<FaCodeBranch />}
               onClick={handleCollabClick}
               className="collab-button"
-              sx={{ 
+              sx={{
                 marginTop: 2,
                 backgroundColor: "#FFB800",
                 "&:hover": {
@@ -225,6 +249,19 @@ function ProjectPage() {
               Collab
             </Button>
           )}
+          <Button
+            variant="contained"
+            onClick={handleDownloadAll}
+            sx={{
+              marginTop: 2,
+              backgroundColor: "#4CAF50",
+              "&:hover": {
+                backgroundColor: "#45a049",
+              },
+            }}
+          >
+            Download All Sounds (ZIP)
+          </Button>
         </div>
       </div>
       <div className="player-section">

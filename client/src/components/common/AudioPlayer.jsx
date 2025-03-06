@@ -56,26 +56,35 @@ const AudioPlayer = ({
     backgroundColor: "#424242",
   });
 
+  const token = localStorage.getItem("authToken");
+  const userPayload = token ? JSON.parse(atob(token.split(".")[1])) : null;
+  const currentUserId = userPayload ? userPayload._id : null;
+
   // Modified handleCollabClick function in AudioPlayer.jsx
   const handleCollabClick = async () => {
     try {
       // Get the current user's ID from localStorage token
-      const token = localStorage.getItem("authToken");
-      const userPayload = JSON.parse(atob(token.split(".")[1]));
+      // const token = localStorage.getItem("authToken");
+      // const userPayload = JSON.parse(atob(token.split(".")[1]));
       
-      const currentUserId = userPayload._id;
-      console.log("creator:", creator);
+      // const currentUserId = userPayload._id;
+      // console.log("creator:", creator);
       
-      // Create the related project first
+      // Create a set of member IDs to avoid duplicates
+      const memberIds = new Set();
+      
+      // Add current user as a member
+      memberIds.add(currentUserId);
+      
+      // Create the related project first - keeping the original creator
       const newProject = await projectService.createRelatedProject({
         title: `My version of ${title}`,
         soundId: [soundId],
         masterSoundId: soundId, // Track the original sound
-        creator: currentUserId, // Set current user as creator, not the original creator
+        creator: creator._id, // Keep original creator
         isFork: true, // Flag as fork
         parentProjectId: parentProjectId, // Track the original project
-        // Add the original creator to the members list to track collaboration
-        members: creator._id !== currentUserId ? [creator._id] : [],
+        members: Array.from(memberIds) // Include current user in members
       });
       
       // Now update the parent project with the child project reference
@@ -225,7 +234,11 @@ const AudioPlayer = ({
 
       <div className="audio-controls">
         <div className="audio-info">
-          {title && <h4 className="track-title">{title}</h4>}
+        {title && (
+            <Link to={`/projects/${parentProjectId}`} className="track-title">
+              <h4>{title}</h4>
+            </Link>
+          )}
           <div className="time-display">
             <span className="current-time">{formatTime(currentTime)}</span>
             <span className="duration"> / {formatTime(duration)}</span>
@@ -287,7 +300,6 @@ const AudioPlayer = ({
         {creator && (
           <div className="creator-info">Created by: {creator.name}</div>
         )}
-        {console.log("Rendering tags for", title, ":", tags)}
         {tags &&
           tags.length > 0 &&
           tags.map((tag) => (
@@ -300,9 +312,11 @@ const AudioPlayer = ({
             </Link>
           ))}
       </div>
-      <button className="collab" onClick={handleCollabClick}>
-        Collab
-      </button>
+      {currentUserId !== creator._id && (
+        <button className="collab" onClick={handleCollabClick}>
+          Collab
+        </button>
+      )}
     </div>
   );
 };

@@ -3,7 +3,7 @@ const router = express.Router();
 
 const Project = require("../models/Project.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware.js");
-
+const archiver = require('archiver');
 // Get all projects
 router.get("/", (req, res, next) => {
   Project.find()
@@ -107,11 +107,23 @@ router.post("/", isAuthenticated, (req, res, next) => {
 });
 
 router.post("/related", isAuthenticated, (req, res, next) => {
-  // Add the current user as the creator
+  // Ensure creator is explicitly set - using the one from the request body
   const newProject = {
     ...req.body,
-    creator: req.payload._id,
+    creator: req.body.creator // Keep the creator from the request (original project's creator)
   };
+
+  // Add the current user as a member if they're not already in the members list
+  if (!newProject.members) {
+    newProject.members = [req.payload._id];
+  } else if (!newProject.members.includes(req.payload._id)) {
+    // Make sure current user is a member
+    if (Array.isArray(newProject.members)) {
+      newProject.members.push(req.payload._id);
+    } else {
+      newProject.members = [newProject.members, req.payload._id];
+    }
+  }
 
   Project.create(newProject)
     .then((createdProject) => {
@@ -223,6 +235,46 @@ router.get("/search/:query", (req, res, next) => {
       res.status(200).json(projects);
     })
     .catch((err) => next(err));
+});
+
+router.get("/download-project/:projectId", async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    
+    // Find the project and populate sound data
+    const project = await Project.findById(projectId).populate('soundId');
+    
+    if (!project || !project.soundId || project.soundId.length === 0) {
+      return res.status(404).json({ message: "No sounds found in this project" });
+    }
+    
+    // Set up the ZIP file
+    res.setHeader('Content-Disposition', `attachment; filename="${project.title || 'project'}_sounds.zip"`);
+    res.setHeader('Content-Type', 'application/zip');
+    
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.pipe(res);
+    
+    // Download each sound and add to ZIP
+    const downloadPromises = project.soundId.map(async (sound) => {
+      try {
+        const response = await fetch(sound.soundURL);
+        const buffer = await response.buffer();
+        const filename = `${sound.title || 'sound'}.mp3`;
+        
+        archive.append(buffer, { name: filename });
+      } catch (error) {
+        console.error(`Error downloading sound ${sound._id}:`, error);
+      }
+    });
+    
+    await Promise.all(downloadPromises);
+    await archive.finalize();
+    
+  } catch (error) {
+    console.error("Error creating ZIP file:", error);
+    res.status(500).json({ message: "Server error while creating ZIP file" });
+  }
 });
 
 // Add a member to a project
