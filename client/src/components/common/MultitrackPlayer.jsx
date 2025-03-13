@@ -7,8 +7,6 @@ import {
   FaStop,
   FaVolumeMute,
   FaVolumeUp,
-  FaSearchPlus,
-  FaSearchMinus,
   FaForward,
   FaBackward,
 } from "react-icons/fa";
@@ -243,16 +241,6 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
   }, []);
 
   const toggleMute = useCallback(() => {
-    // if (multitrackRef.current) {
-    //   if (muted) {
-    //     multitrackRef.current.setMasterVolume(volume || 0.7);
-    //   } else {
-    //     multitrackRef.current.setMasterVolume(0);
-    //     setVolume(0);
-    //   }
-
-    // }
-    // setMuted(!muted);
     console.log(multitrackRef);
     if (!muted) {
       setVolumeBeforeMute(volume);
@@ -265,25 +253,55 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
     setMuted(!muted);
   }, [muted, volume, volumeBeforeMute]);
 
-  const handleZoomChange = useCallback((event, newValue) => {
-    setZoom(newValue);
-  }, []);
-
   return (
     <div className="multitrack-player">
-      <div className="multitrack-container-wrapper">
-        <div
-          ref={containerRef}
-          className="multitrack-container"
-          style={{
-            background: "#424242",
-            color: "#fff",
-            minHeight: "300px",
-            width: "100%",
-          }}
-        ></div>
+      <div className="names-and-tracks">
+        <div className="track-list">
+          {soundTracks?.map((track) => (
+            <div key={track._id} className="track-info">
+              <div className="track-title">{track.title || "Untitled"}</div>
+              <div className="track-creator">
+                {track.creator?.name || "Unknown"}
+              </div>
+              <div className="track-volume">
+                <Slider
+                  size="small"
+                  aria-label={`Volume for ${track.title}`}
+                  value={(trackVolumes[track._id] || 0.8) * 100}
+                  onChange={(e, newValue) => {
+                    if (multitrackRef.current) {
+                      const newVolume = newValue / 100;
+                      multitrackRef.current.setTrackVolume(
+                        track._id,
+                        newVolume
+                      );
+                    }
+                  }}
+                  sx={{
+                    width: 60,
+                    color: "rgb(249, 203, 67)",
+                    "& .MuiSlider-thumb": {
+                      backgroundColor: "rgb(249, 203, 67)",
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="multitrack-container-wrapper">
+          <div
+            ref={containerRef}
+            className="multitrack-container"
+            style={{
+              background: "#424242",
+              color: "#fff",
+              minHeight: "300px",
+              width: "100%",
+            }}
+          ></div>
+        </div>
       </div>
-
       <div className="player-controls">
         <div className="time-and-controls">
           <div className="time-display">
@@ -342,25 +360,6 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
               }}
             />
           </div>
-
-          {/* <div className="zoom-control">
-            <FaSearchMinus />
-            <Slider
-              aria-label="Zoom"
-              min={10}
-              max={100}
-              value={zoom}
-              onChange={handleZoomChange}
-              sx={{
-                width: 100,
-                color: "rgb(251, 165, 24)",
-                "& .MuiSlider-thumb": {
-                  backgroundColor: "rgb(251, 165, 24)",
-                },
-              }}
-            />
-            <FaSearchPlus />
-          </div> */}
         </div>
       </div>
     </div>

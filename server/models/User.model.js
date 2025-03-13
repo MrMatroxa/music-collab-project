@@ -12,7 +12,6 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required."],
     },
     name: {
       type: String,
@@ -48,6 +47,8 @@ const userSchema = new Schema(
         ref: "Project",
       },
     ],
+    avatar: String,
+    googleId: String,
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`

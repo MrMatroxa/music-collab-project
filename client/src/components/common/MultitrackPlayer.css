@@ -16,7 +16,9 @@
   border-radius: 4px;
   overflow: hidden;
 }
-
+.names-and-tracks{
+  display:flex;
+}
 .player-controls {
   display: flex;
   flex-wrap: wrap;
@@ -90,8 +92,9 @@ button:disabled {
 }
 
 .track-info {
-  margin-top: 15px;
+  margin-bottom: 13px;
   padding: 10px;
+  height: 110px;
   background-color: #333;
   border-radius: 4px;
 }
@@ -138,4 +141,41 @@ button:disabled {
     width: 100%;
     justify-content: space-around;
   }
+}
+
+.track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #333;
+  border-radius: 4px;
+}
+
+.track-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  background-color: #424242;
+  border-radius: 4px;
+  color: white;
+}
+
+.track-title {
+  font-weight: bold;
+  flex: 2;
+}
+
+.track-creator {
+  flex: 1;
+  color: #ccc;
+  font-size: 0.9em;
+}
+
+.track-volume {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
 }
