@@ -7,6 +7,7 @@ const projectRoutes = require("./projects.routes");
 const userRoutes = require("./user.routes");
 const soundsRoutes = require("./sounds.routes");
 const tagsRoutes = require("./tags.routes");
+const authGoogleRoutes = require("./authGoogle.routes");
 
 // Define the home/base route
 router.get("/", (req, res, next) => {
@@ -19,13 +20,14 @@ router.use("/projects", projectRoutes);
 router.use("/users", userRoutes);
 router.use("/sounds", soundsRoutes);
 router.use("/tags", tagsRoutes);
+router.use("/", authGoogleRoutes);
 
 // API status route
 router.get("/status", (req, res) => {
   res.status(200).json({
     status: "active",
     message: "API is running normally",
-    timestamp: new Date()
+    timestamp: new Date(),
   });
 });
 
@@ -33,7 +35,7 @@ router.get("/status", (req, res) => {
 router.all("*", (req, res) => {
   res.status(404).json({
     error: "Endpoint not found",
-    message: `The endpoint ${req.method} ${req.originalUrl} does not exist`
+    message: `The endpoint ${req.method} ${req.originalUrl} does not exist`,
   });
 });
 

@@ -15,6 +15,7 @@ import IsAnon from "./components/IsAnon/IsAnon";
 import AddSound from "./pages/AddSound/AddSound";
 import SoundTagDetails from "./pages/SoundTagDetails/SoundTagDetais";
 import ProjectPage from "./pages/ProjectPage/ProjectPage";
+import { LoginGoogle } from "./pages/LoginGoogle/LoginGoogle";
 
 const darkTheme = createTheme({
   palette: {
@@ -46,6 +47,14 @@ function App() {
             element={
               <IsAnon>
                 <SignupPage />
+              </IsAnon>
+            }
+          />
+                    <Route
+            path="/login/google"
+            element={
+              <IsAnon>
+                <LoginGoogle />
               </IsAnon>
             }
           />

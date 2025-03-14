@@ -116,8 +116,6 @@
     width: 100%; /* Make sure it takes full width */
     align-items: baseline; /* Keep your elements aligned properly */
   }
-
-
   
   @media (min-width: 768px) {
     .audio-controls {

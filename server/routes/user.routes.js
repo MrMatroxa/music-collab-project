@@ -29,12 +29,14 @@ router.get("/:userId", (req, res, next) => {
 // Update user profile - requires authentication
 router.put("/:userId", isAuthenticated, (req, res, next) => {
   const { userId } = req.params;
-  
+
   // Ensure users can only update their own profile
   if (userId !== req.payload._id) {
-    return res.status(403).json({ message: "You can only update your own profile" });
+    return res
+      .status(403)
+      .json({ message: "You can only update your own profile" });
   }
-  
+
   // Remove password from request body if it exists
   const { password, ...updateData } = req.body;
 
@@ -52,10 +54,12 @@ router.put("/:userId", isAuthenticated, (req, res, next) => {
 // Delete user - requires authentication
 router.delete("/:userId", isAuthenticated, (req, res, next) => {
   const { userId } = req.params;
-  
+
   // Ensure users can only delete their own profile
   if (userId !== req.payload._id) {
-    return res.status(403).json({ message: "You can only delete your own account" });
+    return res
+      .status(403)
+      .json({ message: "You can only delete your own account" });
   }
 
   User.findByIdAndDelete(userId)
@@ -71,9 +75,9 @@ router.delete("/:userId", isAuthenticated, (req, res, next) => {
 // Get user's projects
 router.get("/:userId/projects", (req, res, next) => {
   const { userId } = req.params;
-  
+
   const Project = require("../models/Project.model");
-  
+
   Project.find({ creator: userId })
     .then((projects) => {
       res.status(200).json(projects);
@@ -84,9 +88,9 @@ router.get("/:userId/projects", (req, res, next) => {
 // Get user's sounds
 router.get("/:userId/sounds", (req, res, next) => {
   const { userId } = req.params;
-  
+
   const Sound = require("../models/Sound.model");
-  
+
   Sound.find({ creator: userId })
     .then((sounds) => {
       res.status(200).json(sounds);

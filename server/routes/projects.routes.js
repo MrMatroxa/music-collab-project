@@ -262,7 +262,6 @@ router.get("/download-project/:projectId", async (req, res) => {
       .filter((sound) => sound && sound.soundURL)
       .map((sound) => {
         try {
-          
           const url = new URL(sound.soundURL);
           const pathParts = url.pathname.split("/");
 

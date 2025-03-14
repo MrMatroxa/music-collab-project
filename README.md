@@ -1,6 +1,6 @@
 # Loop Collab
 
-A collaborative platform for musicians to share, store, and collaborate on audio loops and samples.
+A collaborative platform for musicians to share, store, and collaborate on audio and songs.
 
 ## 📋 Overview
 
