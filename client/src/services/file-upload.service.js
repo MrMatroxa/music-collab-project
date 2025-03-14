@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const serverUrl = import.meta.env.VITE_SERVER_URL;
+console.log("API Server URL:", serverUrl);
+
 const api = axios.create({
-  baseURL: "http://localhost:5005/api/sounds",
+  baseURL: `${serverUrl}/api/sounds`,
   withCredentials: true,
 });
 
