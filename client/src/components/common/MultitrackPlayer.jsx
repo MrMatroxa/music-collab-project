@@ -263,28 +263,13 @@ const MultitrackPlayer = ({ soundTracks, initialVolume = 0.7 }) => {
               <div className="track-creator">
                 {track.creator?.name || "Unknown"}
               </div>
-              <div className="track-volume">
-                <Slider
-                  size="small"
-                  aria-label={`Volume for ${track.title}`}
-                  value={(trackVolumes[track._id] || 0.8) * 100}
-                  onChange={(e, newValue) => {
-                    if (multitrackRef.current) {
-                      const newVolume = newValue / 100;
-                      multitrackRef.current.setTrackVolume(
-                        track._id,
-                        newVolume
-                      );
-                    }
-                  }}
-                  sx={{
-                    width: 60,
-                    color: "rgb(249, 203, 67)",
-                    "& .MuiSlider-thumb": {
-                      backgroundColor: "rgb(249, 203, 67)",
-                    },
-                  }}
-                />
+              <div className="track-mute">
+
+
+
+
+
+              
               </div>
             </div>
           ))}

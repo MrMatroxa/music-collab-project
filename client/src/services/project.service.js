@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5005/api/projects";
-
+// const API_URL = "http://localhost:5005/api/projects";
+const API_URL = `${import.meta.env.VITE_SERVER_URL}/api/projects`;
 // Helper function to get the auth token from localStorage
 const getAuthToken = () => {
   return localStorage.getItem("authToken");
@@ -26,7 +26,7 @@ const createRelatedProject = (projectData) => {
   // Ensure creator exists by using the provided one or falling back to current user
   const dataWithCreator = {
     ...projectData,
-    creator: projectData.creator || currentUserId
+    creator: projectData.creator || currentUserId,
   };
 
   return axios

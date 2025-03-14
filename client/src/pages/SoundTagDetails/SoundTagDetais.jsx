@@ -4,8 +4,7 @@ import { useParams } from "react-router-dom";
 import AudioPlayer from "../../components/common/AudioPlayer";
 import Loading from "../../components/Loading/Loading";
 
-const SERVER_URL =
-  import.meta.env.REACT_APP_SERVER_URL || "http://localhost:5005";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:5005";
 
 export default function SoundTagDetails() {
   const [tag, setTag] = useState(null);
