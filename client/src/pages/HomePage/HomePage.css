@@ -1,0 +1,13 @@
+.sound-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 10px;
+}
+
+.audio-player {
+    min-width: 600px;
+    margin: auto;
+    box-sizing: border-box;
+}
+
