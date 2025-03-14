@@ -1,10 +1,9 @@
 import axios from "axios";
 
-
 class AuthService {
   constructor() {
     this.api = axios.create({
-      baseURL: process.env.SERVER_URL || "http://localhost:5005",
+      baseURL: import.meta.env.VITE_SERVER_URL || "http://localhost:5005",
     });
 
     // Automatically set JWT token on the request headers for every request

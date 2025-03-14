@@ -2,7 +2,8 @@ import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/auth.context";
 import authService from "../../services/auth.service";
-import { Container, Paper, Typography, TextField, Button, Box } from "@mui/material";
+import { Container, Paper, Typography, TextField, Button, Box, Divider } from "@mui/material";
+import GoogleIcon from '@mui/icons-material/Google';
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -31,6 +32,10 @@ function LoginPage() {
         const errorDescription = error.response.data.message;
         setErrorMessage(errorDescription);
       });
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${import.meta.env.VITE_SERVER_URL}/api/auth/google`;
   };
 
   return (
@@ -99,8 +104,30 @@ function LoginPage() {
             Login
           </Button>
         </Box>
+
+        <Divider sx={{ my: 3 }}>OR</Divider>
         
-        <Typography variant="body2" sx={{ mt: 2 }}>
+        <Button 
+          variant="outlined" 
+          fullWidth
+          onClick={handleGoogleLogin}
+          startIcon={<GoogleIcon />}
+          sx={{ 
+            py: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            borderColor: '#4285F4',
+            color: '#4285F4',
+            '&:hover': {
+              borderColor: '#4285F4',
+              backgroundColor: 'rgba(66, 133, 244, 0.04)',
+            }
+          }}
+        >
+          Continue with Google
+        </Button>
+        
+        <Typography variant="body2" sx={{ mt: 3 }}>
           Don't have an account yet? <Link to="/signup" style={{ color: 'rgb(251, 165, 24)' }}>Sign Up</Link>
         </Typography>
       </Paper>

@@ -56,7 +56,7 @@ router.post("/auth/google", async (req, res, next) => {
       return res.status(401).json("Unauthorized");
     }
 
-    const { name, picture, email } = getUserInfo.data;
+    const { given_name, picture, email } = getUserInfo.data;
     const foundUsers = await User.find({
       $or: [{ googleId: email }, { email: email }],
     });
@@ -81,14 +81,14 @@ router.post("/auth/google", async (req, res, next) => {
     }
 
     const createdUser = await User.create({
-      name: email.replace(/[^a-zA-Z0-9]/g, "_"),
+      name: given_name,
       googleID: email,
       email: email,
       avatar: picture,
     });
 
     const { _id, avatar } = createdUser;
-    const payload = { _id, name, avatar };
+    const payload = { _id, name: given_name, avatar };
     const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
       algorithm: "HS256",
       expiresIn: "6h",
